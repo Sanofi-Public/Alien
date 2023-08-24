@@ -1,0 +1,22 @@
+name: Feature Request
+description: Suggest a new idea or improvement for ALIEN
+title: "[Feature Request]: "
+labels: ["enhancement"]
+assignees:
+  - lanele73
+  - michael-bailey2
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe your request
+      placeholder: Tell us what you would like from ALIEN.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Have you...
+      options:
+        - label: Described your goal, and if possible provide a code snippet with a motivating example.
+          required: true
+        - label: Checked for duplicate requests.
+          required: true

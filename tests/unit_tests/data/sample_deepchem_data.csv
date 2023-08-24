@@ -1,0 +1,6 @@
+SMILES,y_exp
+CC1(C)CNc2cc(NC(=O)c3cccnc3NCc3ccncc3)ccc21,-5.489058
+C/C=C(/C)C(=O)O[C@@H]([C@@H](O)c1cc2ccc(=O)oc2cc1OC)C(C)(C)O,-4.8499289
+O=c1cc(-c2ccccc2)oc2ccccc12,-3.9201083
+CCOC(=O)[C@H](CCc1ccccc1)N[C@@H](C)C(=O)N1CCC[C@H]1C(=O)O,-5.6719999
+O=C1OCCN1/N=C/c1ccc(N(O)O)o1,-4.9899998

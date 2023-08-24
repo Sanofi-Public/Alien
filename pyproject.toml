@@ -4,7 +4,7 @@ version = "1.1.2"
 description = "Active Learning In data ExploratioN"
 authors = ["Sanofi"]
 packages = [{ include = 'alien' }]
-repository = "https://github.com/Sanofi-GitHub/UDS-active_learning_sdk/"
+repository = "https://github.com/Sanofi-Public/Alien"
 readme = "README.md"
 
 [tool.poetry.dependencies]

@@ -1,7 +1,3 @@
-![CI/CD Pipeline](https://github.com/Sanofi-Public/Alien/actions/workflows/cicd.yml/badge.svg?branch=master)
-![Documentation](https://github.com/Sanofi-Public/Alien/actions/workflows/documentation.yml/badge.svg?branch=master)
-![Checkmarx](https://github.com/Sanofi-Public/Alien/actions/workflows/checkmarx.yml/badge.svg?branch=master)
-
 Welcome to ALIEN
 ======================================
 
@@ -64,9 +60,7 @@ batch = selector.select()
 
 Contributing
 ============
-**TODO: Change Github link**
 Development of ALIEN happens on [GitHub](https://github.com/Sanofi-Public/Alien).
 
-**TODO: Report form templates**
-- If you encounter a bug, please fill out the issue form [here](https://github.com/Sanofi-GitHub/UDS-active_learning_sdk/issues/new?assignees=lanele73%2Cmichael-bailey2&labels=bug&template=bug_report.yml&title=%5BBug%5D%3A+).
-- If you have a feature request, please fill the [feature request form](https://github.com/Sanofi-GitHub/UDS-active_learning_sdk/issues/new?assignees=lanele73%2Cmichael-bailey2&labels=enhancement&template=feature_request.yml&title=%5BFeature+Request%5D%3A+).
+- If you encounter a bug, please fill out the issue form [here](https://github.com/Sanofi-Public/Alien/issues/new?assignees=lanele73%2Cmichael-bailey2&labels=bug&template=bug_report.yml&title=%5BBug%5D%3A+).
+- If you have a feature request, please fill the [feature request form](https://github.com/Sanofi-Public/Alien/issues/new?assignees=lanele73%2Cmichael-bailey2&labels=enhancement&template=feature_request.yml&title=%5BFeature+Request%5D%3A+).

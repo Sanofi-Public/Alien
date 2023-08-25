@@ -1,11 +1,6 @@
 **ALIEN**
 ======================================
 
-.. image :: /../media/curio.png
-   :alt: Curio the alien
-   :width: 35%
-   :align: right
-
 **A**\ctive **L**\earning **I**\n data **E**\xploratio\ **N** (ALIEN) is a library for active learning,
 making it easy to use active
 learning with popular machine learning frameworks, such as Pytorch, Keras,

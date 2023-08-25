@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>alien.models.keras.keras &mdash; ALIEN 1.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            ALIEN
+          </a>
+              <div class="version">
+                1.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../active_learning.html">What is active learning?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../alien.models.html">alien.models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../alien.selection.html">alien.selection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../alien.benchmarks.html">alien.benchmarks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../alien.data.html">alien.data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../alien.sample_generation.html">alien.sample_generation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">ALIEN</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">alien.models.keras.keras</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for alien.models.keras.keras</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Model classes for wrapping Keras-based models into ALiEN format.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">...decorators</span> <span class="kn">import</span> <span class="n">flatten_batch</span><span class="p">,</span> <span class="n">get_defaults_from_self</span><span class="p">,</span> <span class="n">get_Xy</span>
+<span class="kn">from</span> <span class="nn">...utils</span> <span class="kn">import</span> <span class="n">dict_pop</span><span class="p">,</span> <span class="n">seed_all</span><span class="p">,</span> <span class="n">shift_seed</span><span class="p">,</span> <span class="n">update_copy</span>
+<span class="kn">from</span> <span class="nn">...config</span> <span class="kn">import</span> <span class="n">default_training_epochs</span><span class="p">,</span> <span class="n">INIT_SEED_INCREMENT</span>
+<span class="kn">from</span> <span class="nn">..mc_dropout</span> <span class="kn">import</span> <span class="n">MCDropoutRegressor</span>
+<span class="kn">from</span> <span class="nn">..models</span> <span class="kn">import</span> <span class="n">Model</span>
+<span class="kn">from</span> <span class="nn">...data</span> <span class="kn">import</span> <span class="n">ArrayDataset</span>
+
+<span class="c1"># pylint: disable=import-outside-toplevel</span>
+
+
+<div class="viewcode-block" id="KerasRegressor"><a class="viewcode-back" href="../../../../alien.models.keras.html#alien.models.keras.keras.KerasRegressor">[docs]</a><span class="k">class</span> <span class="nc">KerasRegressor</span><span class="p">(</span><span class="n">MCDropoutRegressor</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base Class for wrapped Keras regression models.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">X</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compile_kwargs</span> <span class="o">=</span> <span class="n">dict_pop</span><span class="p">(</span>
+            <span class="n">kwargs</span><span class="p">,</span>
+            <span class="s2">&quot;metrics&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;loss_weights&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;weighted_metrics&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;run_eagerly&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;steps_per_execution&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;jit_compile&quot;</span><span class="p">,</span>
+            <span class="n">optimizer</span><span class="o">=</span><span class="s2">&quot;adam&quot;</span><span class="p">,</span>
+            <span class="n">loss</span><span class="o">=</span><span class="s2">&quot;mse&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fit_kwargs</span> <span class="o">=</span> <span class="n">dict_pop</span><span class="p">(</span>
+            <span class="n">kwargs</span><span class="p">,</span>
+            <span class="s2">&quot;batch_size&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;verbose&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;callbacks&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;validation_split&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;validation_data&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;shuffle&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;class_weight&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;sample_weight&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;initial_epoch&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;steps_per_epoch&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;validation_steps&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;validation_batch_size&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;validation_freq&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;max_queue_size&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;workers&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;use_multiprocessing&quot;</span><span class="p">,</span>
+            <span class="n">epochs</span><span class="o">=</span><span class="n">default_training_epochs</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">global</span> <span class="n">tf</span>
+        <span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initial_weights</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compiled</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="KerasRegressor.initialize"><a class="viewcode-back" href="../../../../alien.models.keras.html#alien.models.keras.keras.KerasRegressor.initialize">[docs]</a>    <span class="nd">@get_defaults_from_self</span>
+    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">init_seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sample_input</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">init_seed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">seed_all</span><span class="p">(</span><span class="n">init_seed</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">init_seed</span> <span class="o">=</span> <span class="n">shift_seed</span><span class="p">(</span><span class="n">init_seed</span><span class="p">,</span> <span class="n">INIT_SEED_INCREMENT</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_initial_weights</span><span class="p">(</span><span class="n">sample_input</span><span class="p">)</span>
+
+        <span class="c1"># Actually reinitializing the weights in keras is almost impossible,</span>
+        <span class="c1"># so instead we shuffle the saved initial weights (within each tensor),</span>
+        <span class="c1"># giving the same distribution</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_weights</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">init_seed</span><span class="p">)</span><span class="o">.</span><span class="n">permutation</span><span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">flat</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_weights</span>
+            <span class="p">]</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="KerasRegressor.get_weights"><a class="viewcode-back" href="../../../../alien.models.keras.html#alien.models.keras.keras.KerasRegressor.get_weights">[docs]</a>    <span class="k">def</span> <span class="nf">get_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return model weights.&quot;&quot;&quot;</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">get_weights</span><span class="p">()]</span>
+        <span class="k">return</span> <span class="kc">None</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">weights</span></div>
+
+<div class="viewcode-block" id="KerasRegressor.set_weights"><a class="viewcode-back" href="../../../../alien.models.keras.html#alien.models.keras.keras.KerasRegressor.set_weights">[docs]</a>    <span class="nd">@get_defaults_from_self</span>
+    <span class="k">def</span> <span class="nf">set_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_weights</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set model weights according to initial_weights&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">set_weights</span><span class="p">([</span><span class="n">w</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">initial_weights</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="KerasRegressor.save_initial_weights"><a class="viewcode-back" href="../../../../alien.models.keras.html#alien.models.keras.keras.KerasRegressor.save_initial_weights">[docs]</a>    <span class="k">def</span> <span class="nf">save_initial_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sample_input</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save initial weights in self.initial_weights object.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="n">sample_input</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">X</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Can&#39;t initialize weights for the first time without sample input.&quot;</span>
+                <span class="p">)</span>
+            <span class="n">sample_input</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">X</span><span class="p">[:</span><span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">sample_input</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initial_weights</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_weights</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="KerasRegressor.fit_model"><a class="viewcode-back" href="../../../../alien.models.keras.html#alien.models.keras.keras.KerasRegressor.fit_model">[docs]</a>    <span class="nd">@get_Xy</span>
+    <span class="nd">@get_defaults_from_self</span>
+    <span class="k">def</span> <span class="nf">fit_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">compiled</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">compile_kwargs</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">compiled</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)):</span>
+            <span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">X</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="o">**</span><span class="n">update_copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fit_kwargs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="KerasRegressor.predict"><a class="viewcode-back" href="../../../../alien.models.keras.html#alien.models.keras.keras.KerasRegressor.predict">[docs]</a>    <span class="nd">@flatten_batch</span>
+    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c1">#import tensorflow as tf</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)):</span>
+            <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+        <span class="n">preds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">preds</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">preds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">preds</span> <span class="o">=</span> <span class="n">preds</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">preds</span></div>
+
+<div class="viewcode-block" id="KerasRegressor.fix_dropouts"><a class="viewcode-back" href="../../../../alien.models.keras.html#alien.models.keras.keras.KerasRegressor.fix_dropouts">[docs]</a>    <span class="k">def</span> <span class="nf">fix_dropouts</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1">#import tensorflow as tf</span>
+
+        <span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">modify_dropout</span><span class="p">,</span> <span class="n">subobjects</span>
+
+        <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">subobjects</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">skip</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nodropout_layers</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">modify_dropout</span><span class="p">(</span><span class="n">m</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dropouts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="KerasRegressor.predict_samples"><a class="viewcode-back" href="../../../../alien.models.keras.html#alien.models.keras.keras.KerasRegressor.predict_samples">[docs]</a>    <span class="nd">@flatten_batch</span>
+    <span class="k">def</span> <span class="nf">predict_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">multiple</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+        <span class="c1">#import tensorflow as tf</span>
+
+        <span class="n">preds</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">seed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">integers</span><span class="p">(</span><span class="mf">1e6</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)):</span>
+            <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="c1"># get output</span>
+            <span class="n">tf</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="n">shift_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">,</span> <span class="n">i</span> <span class="o">*</span> <span class="mi">7</span><span class="p">))</span>
+            <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># training=1 sets special dropout behaviour</span>
+            <span class="k">if</span> <span class="n">out</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;=</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">out</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">out</span> <span class="o">=</span> <span class="n">out</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+            <span class="n">preds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">preds</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

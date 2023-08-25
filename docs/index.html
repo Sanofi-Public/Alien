@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ALIEN &mdash; ALIEN 1.1.2 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="What is active learning?" href="active_learning.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="#" class="icon icon-home">
+            ALIEN
+          </a>
+              <div class="version">
+                1.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="active_learning.html">What is active learning?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="alien.models.html">alien.models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="alien.selection.html">alien.selection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="alien.benchmarks.html">alien.benchmarks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="alien.data.html">alien.data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="alien.sample_generation.html">alien.sample_generation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">ALIEN</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active"><strong>ALIEN</strong></li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="alien">
+<h1><strong>ALIEN</strong><a class="headerlink" href="#alien" title="Permalink to this heading"></a></h1>
+<a class="reference internal image-reference" href="../media/curio.png"><img alt="Curio the alien" class="align-right" src="../media/curio.png" style="width: 35%;" /></a>
+<p><strong>A</strong>ctive <strong>L</strong>earning <strong>I</strong>n data <strong>E</strong>xploratio<strong>N</strong> (ALIEN) is a library for active learning,
+making it easy to use active
+learning with popular machine learning frameworks, such as Pytorch, Keras,
+Deepchem, LightGBM, CatBoost and others. In most cases, you can plug your
+existing model and dataset into ALIEN’s wrapper classes and immediately get
+useful functions, such as finding the (epistemic) uncertainty of a prediction,
+or selecting batches of new points to be labelled next (eg., by measuring them
+in a lab).</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><a class="reference internal" href="active_learning.html"><span class="doc">What is active learning?</span></a></p></li>
+</ul>
+</div></blockquote>
+<p>We have some handy installation instructions: <a class="reference internal" href="installation.html"><span class="doc">Installation</span></a></p>
+<p>The two main submodules for the end-user of ALIEN are</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="alien.models.html#module-alien.models" title="alien.models"><code class="xref py py-mod docutils literal notranslate"><span class="pre">alien.models</span></code></a>,</p></li>
+</ul>
+<p>which contains wrapper classes which give your models the tools to compute
+uncertainties and get embeddings, and</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="alien.selection.html#module-alien.selection" title="alien.selection"><code class="xref py py-mod docutils literal notranslate"><span class="pre">alien.selection</span></code></a>,</p></li>
+</ul>
+<p>containing <code class="xref py py-class docutils literal notranslate"><span class="pre">SampleSelector</span></code> subclasses which implement a number of different batch
+selection strategies. (ALIEN is designed to make it maximally easy for
+you to implement new selection strategies.)</p>
+<p>The other submodules are <a class="reference internal" href="alien.data.html#module-0" title="alien.data"><code class="xref py py-mod docutils literal notranslate"><span class="pre">alien.data</span></code></a>, containing wrapper classes for various
+data formats (you may or may not have to use these), <a class="reference internal" href="alien.sample_generation.html#module-alien.sample_generation" title="alien.sample_generation"><code class="xref py py-mod docutils literal notranslate"><span class="pre">alien.sample_generation</span></code></a>,
+containing classes to help with generating sample pools for the selectors, and
+<a class="reference internal" href="alien.benchmarks.html#module-alien.benchmarks" title="alien.benchmarks"><code class="xref py py-mod docutils literal notranslate"><span class="pre">alien.benchmarks</span></code></a>, containing functions for running “retrospective experiments”
+and benchmarking selector performance.</p>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="active_learning.html">What is active learning?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="alien.models.html">alien.models</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="alien.models.html#deep-learning-models">Deep learning models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="alien.models.html#how-to-choose">How to choose?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="alien.models.html#gradient-boosting-models">Gradient boosting models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="alien.models.html#other-models">Other models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="alien.models.html#abstract-base-classes">Abstract base classes</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="alien.selection.html">alien.selection</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="alien.selection.html#sampleselector">SampleSelector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="alien.selection.html#covarianceselector">CovarianceSelector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="alien.selection.html#baitselector">BAITSelector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="alien.selection.html#kmeansselector">KmeansSelector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="alien.selection.html#randomselector">RandomSelector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="alien.selection.html#timestampselector">TimestampSelector</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="alien.benchmarks.html">alien.benchmarks</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="alien.benchmarks.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="alien.benchmarks.html#module-alien.benchmarks.metrics">alien.benchmarks.metrics module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="alien.benchmarks.html#module-alien.benchmarks.oracle">alien.benchmarks.oracle module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="alien.benchmarks.html#module-alien.benchmarks.retrospective">alien.benchmarks.retrospective module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="alien.benchmarks.html#module-alien.benchmarks.uncertainty_metrics">alien.benchmarks.uncertainty_metrics module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="alien.benchmarks.html#module-alien.benchmarks">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="alien.data.html">alien.data</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="alien.data.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="alien.data.html#module-alien.data.dataset">alien.data.dataset module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="alien.data.html#module-alien.data.deepchem">alien.data.deepchem module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="alien.data.html#module-0">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="alien.sample_generation.html">alien.sample_generation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="alien.sample_generation.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="alien.sample_generation.html#module-alien.sample_generation.filter_generator">alien.sample_generation.filter_generator module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="alien.sample_generation.html#module-alien.sample_generation.from_set">alien.sample_generation.from_set module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="alien.sample_generation.html#module-alien.sample_generation.generator">alien.sample_generation.generator module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="alien.sample_generation.html#module-alien.sample_generation.random_generator">alien.sample_generation.random_generator module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="alien.sample_generation.html#module-alien.sample_generation.transformation">alien.sample_generation.transformation module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="alien.sample_generation.html#module-alien.sample_generation">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this heading"></a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+</ul>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="active_learning.html" class="btn btn-neutral float-right" title="What is active learning?" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

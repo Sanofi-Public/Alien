@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>alien.models.models &mdash; ALIEN 1.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            ALIEN
+          </a>
+              <div class="version">
+                1.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../active_learning.html">What is active learning?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../alien.models.html">alien.models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../alien.selection.html">alien.selection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../alien.benchmarks.html">alien.benchmarks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../alien.data.html">alien.data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../alien.sample_generation.html">alien.sample_generation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">ALIEN</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">alien.models.models</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for alien.models.models</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABCMeta</span><span class="p">,</span> <span class="n">abstractmethod</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">numpy.typing</span> <span class="kn">import</span> <span class="n">ArrayLike</span>
+
+<span class="kn">from</span> <span class="nn">..data</span> <span class="kn">import</span> <span class="n">Dataset</span><span class="p">,</span> <span class="n">DictDataset</span>
+<span class="kn">from</span> <span class="nn">..decorators</span> <span class="kn">import</span> <span class="n">flatten_batch</span><span class="p">,</span> <span class="n">abstract_group</span><span class="p">,</span> <span class="n">get_Xy</span><span class="p">,</span> <span class="n">get_defaults_from_self</span>
+<span class="kn">from</span> <span class="nn">..stats</span> <span class="kn">import</span> <span class="n">covariance_from_ensemble</span><span class="p">,</span> <span class="n">ensemble_from_covariance</span><span class="p">,</span> <span class="n">std_dev_from_ensemble</span>
+<span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">shift_seed</span><span class="p">,</span> <span class="n">ranges</span><span class="p">,</span> <span class="n">join</span>
+<span class="kn">from</span> <span class="nn">..config</span> <span class="kn">import</span> <span class="n">INIT_SEED_INCREMENT</span>
+
+<span class="c1"># pylint: disable=import-outside-toplevel</span>
+
+
+<div class="viewcode-block" id="Model"><a class="viewcode-back" href="../../../alien.models.html#alien.models.Model">[docs]</a><span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Abstract base class for wrapping a model.</span>
+<span class="sd">    Implementers must provide prediction and</span>
+<span class="sd">    fitting (training) methods.</span>
+
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    X</span>
+<span class="sd">        You may provide training data at the time of initialization.</span>
+<span class="sd">        You may do so by passing `X` and `y` parameters, or by passing a</span>
+<span class="sd">        combined `data` (from which the model will extract `data.X` and</span>
+<span class="sd">        `data.y`, if available, otherwise `data[:-1]` and `data[-1]`).</span>
+
+<span class="sd">        You may instead pass in the training data when you call :meth:`.fit`.</span>
+<span class="sd">    y</span>
+<span class="sd">    data</span>
+<span class="sd">    shape</span>
+<span class="sd">        Specifies the `.shape` of the feature space. This will</span>
+<span class="sd">        be set automatically if you provide training data.</span>
+<span class="sd">    random_seed</span>
+<span class="sd">        Random seed for those models that need it.</span>
+<span class="sd">    init_seed</span>
+<span class="sd">        Random seed for initializing model weights. This is</span>
+<span class="sd">        stored, and after each call to :meth:`.initialize`, it is incremented</span>
+<span class="sd">        by `INIT_SEED_INCREMENT`.</span>
+<span class="sd">    reinitialize</span>
+<span class="sd">        Whether to reinitialize model weights before each</span>
+<span class="sd">        :meth:`.fit`. Defaults to `True`.</span>
+<span class="sd">    ensemble_size</span>
+<span class="sd">        Sets the ensemble size. This parameter is used by</span>
+<span class="sd">        :meth:`.predict_ensemble` to determine how many observations to</span>
+<span class="sd">        produce. It is also used by some ensemble models</span>
+<span class="sd">        (eg., :class:`RandomForestRegressor` and :class:`CatBoostRegressor`)</span>
+<span class="sd">        to set the size of their ensemble of estimators.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">X</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">y</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">random_seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">reinitialize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">init_seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">shape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">ensemble_size</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span>
+            <span class="k">assert</span> <span class="p">(</span><span class="n">X</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">y</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">),</span> <span class="s2">&quot;Only pass X,y *or* data to Model constructor&quot;</span>
+        <span class="k">elif</span> <span class="n">X</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">y</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">X</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="n">shape</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">ensemble_size</span> <span class="o">=</span> <span class="n">ensemble_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">random_seed</span> <span class="o">=</span> <span class="n">random_seed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">random_seed</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reinitialize</span> <span class="o">=</span> <span class="n">reinitialize</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init_seed</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">shift_seed</span><span class="p">(</span><span class="n">random_seed</span><span class="p">,</span> <span class="n">INIT_SEED_INCREMENT</span><span class="p">)</span> <span class="k">if</span> <span class="n">init_seed</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">init_seed</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trained</span> <span class="o">=</span> <span class="kc">False</span>
+
+<div class="viewcode-block" id="Model.predict"><a class="viewcode-back" href="../../../alien.models.html#alien.models.Model.predict">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Applies the model to input(s) X (with the last self.ndim</span>
+<span class="sd">        axes corresponding to each sample), and returns prediction(s).</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="Model.predict_samples"><a class="viewcode-back" href="../../../alien.models.html#alien.models.Model.predict_samples">[docs]</a>    <span class="k">def</span> <span class="nf">predict_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Makes a prediction for for the batch X, randomly selected from</span>
+<span class="sd">        this model&#39;s posterior distribution. Gives an</span>
+<span class="sd">        ensemble of predictions, with shape `(len(X), n)`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">predict_samples</span><span class="p">(</span><span class="n">X</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Model.fit"><a class="viewcode-back" href="../../../alien.models.html#alien.models.Model.fit">[docs]</a>    <span class="nd">@abstract_group</span><span class="p">(</span><span class="s1">&#39;fit&#39;</span><span class="p">)</span>
+    <span class="nd">@get_Xy</span>
+    <span class="nd">@get_defaults_from_self</span>
+    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">reinitialize</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fit_uncertainty</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fits the model to the given training data. If `X` and `y` are</span>
+<span class="sd">        not specified, this method looks for `self.X` and `self.y`. If</span>
+<span class="sd">        :meth:`.fit` finds an `X` but not a `y`, it treats `X` as a</span>
+<span class="sd">        combined dataset `data`, and then uses `X, y = data.X, data.y`.</span>
+<span class="sd">        If we can&#39;t find `data.X` and `data.y`, we instead use </span>
+<span class="sd">        `X, y = data[:-1], data[-1]`.</span>
+
+<span class="sd">        :meth:`.fit` should also fit any accompanying uncertainty model.</span>
+
+<span class="sd">        :param reinitialize: If `True`, reinitializes model weights before</span>
+<span class="sd">            fitting. If `False`, starts training from previous weight values.</span>
+<span class="sd">            If not specified, uses `self.reinitialize`)</span>
+
+<span class="sd">        :param fit_uncertainty: If `True`, a call to :meth:`fit` will also call</span>
+<span class="sd">            :meth:`fit_uncertainty`. Defaults to `True`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">reinitialize</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">initialize</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fit_model</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">fit_uncertainty</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fit_uncertainty</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Model.fit_model"><a class="viewcode-back" href="../../../alien.models.html#alien.models.Model.fit_model">[docs]</a>    <span class="nd">@abstract_group</span><span class="p">(</span><span class="s1">&#39;fit&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">fit_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fit just the model component, and not the uncertainties (if these are</span>
+<span class="sd">        computed separately)</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="Model.fit_uncertainty"><a class="viewcode-back" href="../../../alien.models.html#alien.models.Model.fit_uncertainty">[docs]</a>    <span class="k">def</span> <span class="nf">fit_uncertainty</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fit just the uncertainties (if these need additional fitting beyond</span>
+<span class="sd">        just the model)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;fit_laplace&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fit_laplace</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">)</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">X</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">DictDataset</span><span class="p">({</span><span class="s2">&quot;X&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">})</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span>
+
+    <span class="nd">@data</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">Dataset</span><span class="p">):</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">Dataset</span><span class="o">.</span><span class="n">from_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">data</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">y</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The shape of the feature space. Can either be specified directly,</span>
+<span class="sd">        or inferred from training data, in which case</span>
+<span class="sd">        `self.shape == X.shape[1:]`, i.e., the first (batch) dimension is</span>
+<span class="sd">        dropped.</span>
+
+<span class="sd">        This property is used by any methods which use the `@flatten_batch`</span>
+<span class="sd">        decorator.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_shape</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">X</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_shape</span>
+
+    <span class="nd">@shape</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_shape</span> <span class="o">=</span> <span class="n">shape</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">ndim</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The number of axes in the feature space. Equal to `len(self.shape)`.</span>
+<span class="sd">        Most commonly equal to 1. If training data have been specified, then</span>
+<span class="sd">        `self.ndim == X.ndim - 1`.</span>
+
+<span class="sd">        This property is used by any methods which use the `@flatten_batch`</span>
+<span class="sd">        decorator.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">default</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Model.initialize"><a class="viewcode-back" href="../../../alien.models.html#alien.models.Model.initialize">[docs]</a>    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">init_seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sample_input</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        (Re)initializes the model weights. If `self.reinitialize` is True, this </span>
+<span class="sd">        should be called at the start of every :meth:`.fit`, and this should be </span>
+<span class="sd">        the default behaviour of :meth:`.fit`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="Model.save"><a class="viewcode-back" href="../../../alien.models.html#alien.models.Model.save">[docs]</a>    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Saves the model. May well be overloaded by subclasses, if they contain</span>
+<span class="sd">        non-picklable components (or pickling would be inefficient).</span>
+
+<span class="sd">        For any subclass, the :meth:`.save` and :meth:`.load` methods should be</span>
+<span class="sd">        compatible with each other.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">import</span> <span class="nn">pickle</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Model.load"><a class="viewcode-back" href="../../../alien.models.html#alien.models.Model.load">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Loads a model. This particular implementation only works if `.save(path)` hasn&#39;t</span>
+<span class="sd">        been overloaded.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">import</span> <span class="nn">pickle</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="Regressor"><a class="viewcode-back" href="../../../alien.models.html#alien.models.Regressor">[docs]</a><span class="k">class</span> <span class="nc">Regressor</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class can accept as its first argument (or `model`),</span>
+<span class="sd">    any of the deep learning models we currently support. So,</span>
+<span class="sd">    Pytorch, Keras or DeepChem.</span>
+
+<span class="sd">    `Regressor`&#39;s constructor will build a specialized subclass depending on</span>
+<span class="sd">    the type of `model`. The resulting wrapped model will compute uncertainties </span>
+<span class="sd">    and covariances in the way prescribed by `uncertainty`.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model: A Pytorch, Keras or DeepChem model, to be wrapped.</span>
+
+<span class="sd">        uncertainty (str): can be `&#39;dropout&#39;` or `&#39;laplace&#39;`. This determines</span>
+<span class="sd">            how the model will compute uncertainties and covariances.</span>
+<span class="sd">        </span>
+<span class="sd">        **kwargs: You can pass in arguments to the destined subclass. So, for</span>
+<span class="sd">            example, if `model` is a DeepChem model, then `**kwargs` may carry</span>
+<span class="sd">            any of the arguments accepted by `alien.models.DeepChemRegressor`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+                
+<div class="viewcode-block" id="Regressor.predict"><a class="viewcode-back" href="../../../alien.models.html#alien.models.Regressor.predict">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">return_std_dev</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Applies the model to input(s) X (with the last self.ndim</span>
+<span class="sd">        axes corresponding to each sample), and returns prediction(s).</span>
+
+<span class="sd">        :param return_std_dev: if True, returns a tuple `(prediction, std_dev)`</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">X</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">cls</span> <span class="o">==</span> <span class="n">Regressor</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">test_if_pytorch</span><span class="p">(</span><span class="n">model</span><span class="p">):</span>
+                <span class="kn">from</span> <span class="nn">.pytorch</span> <span class="kn">import</span> <span class="n">PytorchRegressor</span>
+
+                <span class="k">return</span> <span class="n">PytorchRegressor</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span>
+                    <span class="n">PytorchRegressor</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+                <span class="p">)</span>
+            <span class="k">elif</span> <span class="n">test_if_keras</span><span class="p">(</span><span class="n">model</span><span class="p">):</span>
+                <span class="kn">from</span> <span class="nn">.keras</span> <span class="kn">import</span> <span class="n">KerasRegressor</span>
+
+                <span class="k">return</span> <span class="n">KerasRegressor</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span>
+                    <span class="n">KerasRegressor</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+                <span class="p">)</span>
+            <span class="k">elif</span> <span class="n">test_if_deepchem</span><span class="p">(</span><span class="n">model</span><span class="p">):</span>
+                <span class="kn">from</span> <span class="nn">.deepchem</span> <span class="kn">import</span> <span class="n">DeepChemRegressor</span>
+
+                <span class="k">return</span> <span class="n">DeepChemRegressor</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span>
+                    <span class="n">DeepChemRegressor</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Regressor doesn&#39;t support models of type </span><span class="si">{</span><span class="n">model</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__qualname__</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CovarianceRegressor"><a class="viewcode-back" href="../../../alien.models.html#alien.models.CovarianceRegressor">[docs]</a><span class="k">class</span> <span class="nc">CovarianceRegressor</span><span class="p">(</span><span class="n">Regressor</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">uncertainty</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_covariance_for_ensemble</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_covariance_for_ensemble</span> <span class="o">=</span> <span class="n">use_covariance_for_ensemble</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">uncertainty</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">covariance</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;covariance_&#39;</span> <span class="o">+</span> <span class="n">uncertainty</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">covariance</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">std_dev</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;std_dev_&#39;</span> <span class="o">+</span> <span class="n">uncertainty</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">std_dev</span><span class="p">)</span>
+
+<div class="viewcode-block" id="CovarianceRegressor.covariance"><a class="viewcode-back" href="../../../alien.models.html#alien.models.CovarianceRegressor.covariance">[docs]</a>    <span class="k">def</span> <span class="nf">covariance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the covariance of the epistemic uncertainty between all </span>
+<span class="sd">        rows of X. This is where memory bugs often appear, because of the</span>
+<span class="sd">        large matrices involved.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+    <span class="c1"># @flatten_batch</span>
+<div class="viewcode-block" id="CovarianceRegressor.predict_ensemble"><a class="viewcode-back" href="../../../alien.models.html#alien.models.CovarianceRegressor.predict_ensemble">[docs]</a>    <span class="k">def</span> <span class="nf">predict_ensemble</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">multiple</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a correlated ensemble of predictions for samples X.</span>
+
+<span class="sd">        Ensembles are correlated only over the last batch dimension,</span>
+<span class="sd">        corresponding to axis (-1 - self.ndim) of X. Earlier dimensions</span>
+<span class="sd">        have no guarantee of correlation.</span>
+
+<span class="sd">        :param multiple: standard deviation will be multiplied by this</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict_samples</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ensemble_size</span><span class="p">,</span> <span class="n">multiple</span><span class="o">=</span><span class="n">multiple</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CovarianceRegressor.predict_samples"><a class="viewcode-back" href="../../../alien.models.html#alien.models.CovarianceRegressor.predict_samples">[docs]</a>    <span class="nd">@get_defaults_from_self</span>
+    <span class="k">def</span> <span class="nf">predict_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">multiple</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">use_covariance_for_ensemble</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">use_covariance_for_ensemble</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Using covariance computation to produce ensembles, which is unusual, so we&#39;re warning you here. Set `use_covariance_for_ensemble=True` to skip this error.&quot;</span><span class="p">)</span>
+        <span class="n">mean</span><span class="p">,</span> <span class="n">cov</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">covariance</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ensemble_from_covariance</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">multiple</span> <span class="o">*</span> <span class="n">cov</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">)</span></div>
+
+    <span class="c1"># May want to override this:</span>
+<div class="viewcode-block" id="CovarianceRegressor.std_dev"><a class="viewcode-back" href="../../../alien.models.html#alien.models.CovarianceRegressor.std_dev">[docs]</a>    <span class="nd">@flatten_batch</span>
+    <span class="k">def</span> <span class="nf">std_dev</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the (epistemic) standard deviation of the model</span>
+<span class="sd">        on input `X`.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">covariance</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span><span class="o">.</span><span class="n">diagonal</span><span class="p">())</span></div></div>
+
+
+<div class="viewcode-block" id="EnsembleRegressor"><a class="viewcode-back" href="../../../alien.models.html#alien.models.EnsembleRegressor">[docs]</a><span class="k">class</span> <span class="nc">EnsembleRegressor</span><span class="p">(</span><span class="n">CovarianceRegressor</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Inherit from EnsembleRegressor if you wish to compute ensembles directly.</span>
+<span class="sd">    This class provides covariance and prediction for free, given these</span>
+<span class="sd">    ensembles of predictions.</span>
+
+<span class="sd">    Subclasses must implement one of :meth:`predict_ensemble` or</span>
+<span class="sd">    :meth:`predict_samples`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">ensemble_size</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">uncertainty</span><span class="o">=</span><span class="s1">&#39;ensemble&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">ensemble_size</span><span class="o">=</span><span class="n">ensemble_size</span><span class="p">,</span> <span class="n">uncertainty</span><span class="o">=</span><span class="n">uncertainty</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="EnsembleRegressor.predict"><a class="viewcode-back" href="../../../alien.models.html#alien.models.EnsembleRegressor.predict">[docs]</a>    <span class="nd">@flatten_batch</span>
+    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">return_std_dev</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="n">preds_e</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict_ensemble</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+        <span class="n">preds</span> <span class="o">=</span> <span class="n">preds_e</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">return_std_dev</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">preds</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">preds_e</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">preds</span></div>
+
+<div class="viewcode-block" id="EnsembleRegressor.predict_ensemble"><a class="viewcode-back" href="../../../alien.models.html#alien.models.EnsembleRegressor.predict_ensemble">[docs]</a>    <span class="nd">@abstract_group</span><span class="p">(</span><span class="s1">&#39;ensemble&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">predict_ensemble</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns an ensemble of predictions.</span>
+
+<span class="sd">        :param multiple: standard deviation should be this much larger</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict_samples</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ensemble_size</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="EnsembleRegressor.predict_samples"><a class="viewcode-back" href="../../../alien.models.html#alien.models.EnsembleRegressor.predict_samples">[docs]</a>    <span class="nd">@flatten_batch</span>
+    <span class="nd">@abstract_group</span><span class="p">(</span><span class="s1">&#39;ensemble&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">predict_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span> <span class="c1">#multiple=1.0):</span>
+        <span class="c1"># Here, we assume `predict_ensemble` has been implemented.</span>
+        <span class="n">preds</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">ensemble_size</span> <span class="ow">and</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;multiple&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;models&#39;</span><span class="p">):</span>
+            <span class="n">indices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ensemble_size</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">preds</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">indices</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">ranges</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ensemble_size</span><span class="p">):</span>
+                <span class="n">indices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ensemble_size</span><span class="p">,</span> <span class="n">k</span><span class="o">-</span><span class="n">j</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="n">preds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">predict_ensemble</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)[:,</span><span class="n">indices</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">join</span><span class="p">(</span><span class="n">preds</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="EnsembleRegressor.covariance_ensemble"><a class="viewcode-back" href="../../../alien.models.html#alien.models.EnsembleRegressor.covariance_ensemble">[docs]</a>    <span class="nd">@flatten_batch</span><span class="p">(</span><span class="n">degree</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">covariance_ensemble</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute covariance from the ensemble of predictions&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">covariance_from_ensemble</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">predict_ensemble</span><span class="p">(</span><span class="n">X</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="EnsembleRegressor.std_dev_ensemble"><a class="viewcode-back" href="../../../alien.models.html#alien.models.EnsembleRegressor.std_dev_ensemble">[docs]</a>    <span class="nd">@flatten_batch</span>
+    <span class="k">def</span> <span class="nf">std_dev_ensemble</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the (epistemic) standard deviation of the model</span>
+<span class="sd">        on input `X`.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">std_dev_from_ensemble</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">predict_ensemble</span><span class="p">(</span><span class="n">X</span><span class="p">))</span></div></div>
+
+
+<span class="k">class</span> <span class="nc">WrappedModel</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+
+    <span class="k">def</span> <span class="nf">fit_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+
+<span class="c1"># -------- Some mixin classes for embeddings -------- #</span>
+
+<span class="k">class</span> <span class="nc">EmbeddableModel</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A mixin class for models which can provide a vector embedding for its</span>
+<span class="sd">    inputs. There are a number of ways to define this embedding:</span>
+
+<span class="sd">    0. A subclass defines the :meth:`embedding` method explicitly, or</span>
+
+<span class="sd">    1. The model has a &#39;last layer&#39; before the output, in which inputs</span>
+<span class="sd">       are embedded, or</span>
+
+<span class="sd">    2. The model&#39;s inputs are already vectors, so the embedding is the</span>
+<span class="sd">       identity map</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        embedding (str): Specifies how this model should find the embedding.</span>
+<span class="sd">            If it can&#39;t find an embedding method according to this guidance, </span>
+<span class="sd">            then it raises an error.</span>
+<span class="sd">             - `&#39;explicit&#39;` or `0` - Only option 0 is allowed</span>
+<span class="sd">             - `&#39;last_layer&#39;` or `1` - Only option 1 is allowed</span>
+<span class="sd">             - `&#39;input&#39;` or `2` - Only option 2</span>
+<span class="sd">             - `&#39;any&#39;` or `[0,1,2]` - Whatever is available, preference in</span>
+<span class="sd">               the order given</span>
+<span class="sd">             - `&#39;good&#39;` or `[0,1]` - Whichever of options 0 or 1 is available,</span>
+<span class="sd">               preference for 0. This is the default.</span>
+<span class="sd">             - a sequence of integers - for other orderings</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">embedding</span><span class="o">=</span><span class="s1">&#39;good&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;embedding&#39;</span><span class="p">):</span>
+            <span class="c1"># Saving self.embedding so it doesn&#39;t get overwritten</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_embedding</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding</span>
+
+        <span class="c1"># invokes a property setter:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">embedding_method</span> <span class="o">=</span> <span class="n">embedding</span>  
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">embedding_method</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_embedding_method</span>
+
+    <span class="nd">@embedding_method</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">embedding_method</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+            <span class="n">method</span> <span class="o">=</span> <span class="p">[</span><span class="n">method</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_embedding_method</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">method</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_embedding_method</span><span class="o">.</span><span class="n">extend</span><span class="p">({</span>
+                <span class="s1">&#39;explicit&#39;</span><span class="p">:[</span><span class="mi">0</span><span class="p">],</span>
+                <span class="s1">&#39;last_layer&#39;</span><span class="p">:[</span><span class="mi">1</span><span class="p">],</span>
+                <span class="s1">&#39;input&#39;</span><span class="p">:[</span><span class="mi">2</span><span class="p">],</span>
+                <span class="s1">&#39;any&#39;</span><span class="p">:[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span>
+                <span class="s1">&#39;good&#39;</span><span class="p">:[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+            <span class="p">}</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="p">[</span><span class="n">m</span><span class="p">]))</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">find_method</span><span class="p">()</span>
+
+    <span class="n">method_names</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="mi">0</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;_embedding&#39;</span><span class="p">,</span> <span class="s1">&#39;embed&#39;</span><span class="p">,</span> <span class="s1">&#39;embeddings&#39;</span><span class="p">],</span>
+        <span class="mi">1</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;last_layer_embedding&#39;</span><span class="p">,</span> <span class="s1">&#39;last_layer_embed&#39;</span><span class="p">,</span> <span class="s1">&#39;embed_last_layer&#39;</span><span class="p">,</span> <span class="s1">&#39;last_layer&#39;</span><span class="p">],</span>
+        <span class="mi">2</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;input_embedding&#39;</span><span class="p">],</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">find_method</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_embedding_method</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">method_names</span><span class="p">[</span><span class="n">m</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">embedding</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span>
+                    <span class="k">return</span>
+        
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not find an embedding for model of type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">input_embedding</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">X</span><span class="o">.</span><span class="n">shape</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;`input_embedding` needs the input to be array-like, but you passed a </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">X</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">X</span>
+
+
+<span class="k">class</span> <span class="nc">LastLayerEmbeddableModel</span><span class="p">(</span><span class="n">EmbeddableModel</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">embedding</span><span class="o">=</span><span class="s1">&#39;last_layer&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">embedding</span><span class="o">=</span><span class="n">embedding</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">last_layer_embedding</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the activations of the last layer before the output.&quot;&quot;&quot;</span>               
+
+
+<span class="k">def</span> <span class="nf">test_if_pytorch</span><span class="p">(</span><span class="n">model</span><span class="p">):</span>
+    <span class="n">pt_attrs</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;_parameters&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;_buffers&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;_forward_hooks&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;_modules&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
+    <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="nb">hasattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span> <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">pt_attrs</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">torch.nn</span> <span class="kn">import</span> <span class="n">Module</span>
+
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">Module</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+            <span class="k">pass</span>
+    <span class="k">return</span> <span class="kc">False</span>
+
+
+<span class="k">def</span> <span class="nf">test_if_deepchem</span><span class="p">(</span><span class="n">model</span><span class="p">):</span>
+    <span class="n">dc_attrs</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;_loss_fn&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;output_types&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;model_class&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;_prediction_outputs&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
+    <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="nb">hasattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span> <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">dc_attrs</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">deepchem.models</span> <span class="kn">import</span> <span class="n">Model</span> <span class="k">as</span> <span class="n">DCModel</span>
+
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">DCModel</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
+            <span class="k">pass</span>
+    <span class="k">return</span> <span class="kc">False</span>
+
+
+<span class="k">def</span> <span class="nf">test_if_keras</span><span class="p">(</span><span class="n">model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test if model is a keras model.&quot;&quot;&quot;</span>
+    <span class="n">kr_attrs</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;_supports_masking&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;_name&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;_callable_losses&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;_jit_compile&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;_input_dtype&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;_graph_initialized&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
+    <span class="k">if</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">hasattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span> <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">kr_attrs</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">4</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">tensorflow.keras</span> <span class="kn">import</span> <span class="n">Model</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">Model</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">ImportError</span><span class="p">,</span> <span class="ne">AssertionError</span><span class="p">):</span>
+            <span class="k">pass</span>
+    <span class="k">return</span> <span class="kc">False</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>alien.utils &mdash; ALIEN 1.1.2 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            ALIEN
+          </a>
+              <div class="version">
+                1.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../active_learning.html">What is active learning?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../alien.models.html">alien.models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../alien.selection.html">alien.selection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../alien.benchmarks.html">alien.benchmarks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../alien.data.html">alien.data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../alien.sample_generation.html">alien.sample_generation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">ALIEN</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">alien.utils</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for alien.utils</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">MutableSet</span><span class="p">,</span> <span class="n">MutableSequence</span><span class="p">,</span> <span class="n">Collection</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">numpy.typing</span> <span class="kn">import</span> <span class="n">ArrayLike</span>
+
+
+<span class="c1"># pylint: disable=import-error</span>
+<div class="viewcode-block" id="seed_all"><a class="viewcode-back" href="../../alien.html#alien.utils.seed_all">[docs]</a><span class="k">def</span> <span class="nf">seed_all</span><span class="p">(</span><span class="n">seed</span><span class="p">):</span>
+    <span class="kn">import</span> <span class="nn">random</span>
+
+    <span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">torch</span>
+
+        <span class="n">torch</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+
+        <span class="n">tf</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="as_list"><a class="viewcode-back" href="../../alien.html#alien.utils.as_list">[docs]</a><span class="k">def</span> <span class="nf">as_list</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">x</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">Collection</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[]</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">x</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="match"><a class="viewcode-back" href="../../alien.html#alien.utils.match">[docs]</a><span class="k">def</span> <span class="nf">match</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">pool</span><span class="p">,</span> <span class="n">fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">x</span> <span class="o">==</span> <span class="n">y</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pool</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">fn</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">p</span>
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="isint"><a class="viewcode-back" href="../../alien.html#alien.utils.isint">[docs]</a><span class="k">def</span> <span class="nf">isint</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check whether i can be cast to an integer</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        i (_type_): _description_</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        _type_: _description_</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">==</span> <span class="n">i</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="dict_get"><a class="viewcode-back" href="../../alien.html#alien.utils.dict_get">[docs]</a><span class="k">def</span> <span class="nf">dict_get</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="o">*</span><span class="n">keys</span><span class="p">,</span> <span class="n">_pop</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">d_get</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">pop</span> <span class="k">if</span> <span class="n">_pop</span> <span class="k">else</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">kk</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">k</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">kk</span> <span class="ow">in</span> <span class="n">d</span><span class="p">:</span>
+                    <span class="n">out</span><span class="p">[</span><span class="n">k</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">d_get</span><span class="p">(</span><span class="n">kk</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">d</span><span class="p">:</span>
+            <span class="n">out</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">d_get</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">d</span><span class="p">:</span>
+            <span class="n">out</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">d_get</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> 
+        <span class="k">elif</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">out</span><span class="p">:</span>
+            <span class="n">out</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+    <span class="k">return</span> <span class="n">out</span></div>
+
+
+<div class="viewcode-block" id="dict_pop"><a class="viewcode-back" href="../../alien.html#alien.utils.dict_pop">[docs]</a><span class="k">def</span> <span class="nf">dict_pop</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="o">*</span><span class="n">keys</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">dict_get</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="o">*</span><span class="n">keys</span><span class="p">,</span> <span class="n">_pop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="std_keys"><a class="viewcode-back" href="../../alien.html#alien.utils.std_keys">[docs]</a><span class="k">def</span> <span class="nf">std_keys</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="o">*</span><span class="n">groups</span><span class="p">,</span> <span class="o">**</span><span class="n">defaults</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Standardizes keys in a dictionary.</span>
+<span class="sd">    Each positional arg, `g`, apart from the first one (`d`) should be an </span>
+<span class="sd">    iterable of keys. Then `d` is processed so that all keys in `g`</span>
+<span class="sd">    are replaced with the first key in `g`. If more than one key in `g`</span>
+<span class="sd">    is in `d`, then all keys in `g` except the first (in `d`) will be removed.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">groups</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">g</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">d</span><span class="p">:</span>
+                <span class="k">del</span> <span class="n">out</span><span class="p">[</span><span class="n">h</span><span class="p">]</span>
+                <span class="n">out</span><span class="p">[</span><span class="n">g</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="n">h</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">defaults</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">out</span><span class="p">:</span>
+            <span class="n">out</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+    <span class="k">return</span> <span class="n">out</span></div>
+
+
+<div class="viewcode-block" id="update_copy"><a class="viewcode-back" href="../../alien.html#alien.utils.update_copy">[docs]</a><span class="k">def</span> <span class="nf">update_copy</span><span class="p">(</span><span class="n">d1</span><span class="p">,</span> <span class="n">d2</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="n">d1</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">d2</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="n">d</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">d2</span><span class="p">)</span>
+    <span class="n">d</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">d</span></div>
+
+
+<span class="n">ERROR</span> <span class="o">=</span> <span class="s2">&quot;f6b1c433450cb749f45844dd60ab3b27&quot;</span>
+
+<div class="viewcode-block" id="any_get"><a class="viewcode-back" href="../../alien.html#alien.utils.any_get">[docs]</a><span class="k">def</span> <span class="nf">any_get</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">elements</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">ERROR</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elements</span><span class="p">,</span> <span class="n">Collection</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elements</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">elements</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">s</span><span class="p">[</span><span class="n">any_get</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">elements</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">ERROR</span><span class="p">)]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">pass</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">elements</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">s</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">e</span>
+    
+    <span class="k">if</span> <span class="n">default</span><span class="o">==</span><span class="n">ERROR</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;None of the given keys are in the </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">s</span><span class="p">)</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">default</span></div>
+
+
+<div class="viewcode-block" id="any_pop"><a class="viewcode-back" href="../../alien.html#alien.utils.any_pop">[docs]</a><span class="k">def</span> <span class="nf">any_pop</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">keys</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">ERROR</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="n">any_get</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">keys</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">ERROR</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="n">any_get</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">keys</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">ERROR</span><span class="p">)</span>
+            <span class="n">s</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">k</span>
+
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">default</span><span class="o">==</span><span class="n">ERROR</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;None of the given keys are in the </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">s</span><span class="p">)</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">default</span></div>
+
+
+<div class="viewcode-block" id="alias"><a class="viewcode-back" href="../../alien.html#alien.utils.alias">[docs]</a><span class="k">def</span> <span class="nf">alias</span><span class="p">(</span><span class="n">argname</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Aliases an argument&quot;&quot;&quot;</span></div>
+    <span class="c1"># TODO: write argument aliasing tool</span>
+    <span class="c1">#raise NotImplementedError</span>
+
+
+<div class="viewcode-block" id="multisearch"><a class="viewcode-back" href="../../alien.html#alien.utils.multisearch">[docs]</a><span class="k">def</span> <span class="nf">multisearch</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="n">one_to_one</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Finds the indices of multiple query values. Searches over the</span>
+<span class="sd">    first axis of &#39;a&#39;, with further axes corresponding to &#39;feature</span>
+<span class="sd">    space&#39;, i.e., the shape of the search terms. Return type depends</span>
+<span class="sd">    on one_to_one.</span>
+
+<span class="sd">    :param a: the array to search</span>
+<span class="sd">    :param query: an array of query values</span>
+<span class="sd">    :one_to_one: if True, validates that each search term</span>
+<span class="sd">        appears exactly once, and returns a corresponding array</span>
+<span class="sd">        of indices. If False, returns a 2D array with 2nd axis of</span>
+<span class="sd">        length 2, with each pair of the form (query_index, array_index)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">red_axes</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="n">a</span><span class="o">.</span><span class="n">ndim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>  <span class="c1"># &#39;feature space&#39; axes</span>
+    <span class="n">hits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">a</span> <span class="o">==</span> <span class="n">query</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="n">red_axes</span><span class="p">)</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argwhere</span><span class="p">(</span><span class="n">hits</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">one_to_one</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span>
+            <span class="n">args</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">query</span><span class="p">))</span>
+        <span class="p">),</span> <span class="s2">&quot;Search results are not one-to-one with search queries!&quot;</span>
+        <span class="k">return</span> <span class="n">args</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">args</span></div>
+
+
+<div class="viewcode-block" id="ufunc"><a class="viewcode-back" href="../../alien.html#alien.utils.ufunc">[docs]</a><span class="k">def</span> <span class="nf">ufunc</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">wrapped_f</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">wrapped_f</span><span class="o">.</span><span class="n">_f</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+            <span class="n">wrapped_f</span><span class="o">.</span><span class="n">_f</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">frompyfunc</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">wrapped_f</span><span class="o">.</span><span class="n">_f</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="n">wrapped_f</span><span class="o">.</span><span class="n">_f</span> <span class="o">=</span> <span class="n">f</span>
+    <span class="k">return</span> <span class="n">wrapped_f</span></div>
+
+
+<div class="viewcode-block" id="shift_seed"><a class="viewcode-back" href="../../alien.html#alien.utils.shift_seed">[docs]</a><span class="k">def</span> <span class="nf">shift_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">,</span> <span class="n">shift</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">seed</span> <span class="o">+</span> <span class="n">shift</span>
+    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">seed</span></div>
+
+
+<div class="viewcode-block" id="ranges"><a class="viewcode-back" href="../../alien.html#alien.utils.ranges">[docs]</a><span class="k">def</span> <span class="nf">ranges</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Takes arguments ([start,] stop, step).</span>
+<span class="sd">    Returns a list of pairs consisting of</span>
+<span class="sd">    (start_i, stop_i), which together divide</span>
+<span class="sd">    up range(start, stop) into chunks of size</span>
+<span class="sd">    step (plus final chunk).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,)</span> <span class="o">+</span> <span class="n">args</span>
+    <span class="n">stop</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">edges</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">))</span> <span class="o">+</span> <span class="p">[</span><span class="n">stop</span><span class="p">]</span>
+    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">edges</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">edges</span><span class="p">[</span><span class="mi">1</span><span class="p">:]))</span></div>
+
+
+<div class="viewcode-block" id="chunks"><a class="viewcode-back" href="../../alien.html#alien.utils.chunks">[docs]</a><span class="k">class</span> <span class="nc">chunks</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Takes arguments (seq, [[start,] stop,] step).</span>
+<span class="sd">    Returns an iterator which iterates over chunks</span>
+<span class="sd">    of seq, of size step.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seq</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">seq</span><span class="p">),)</span> <span class="o">+</span> <span class="n">args</span>
+            <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+                <span class="n">seq</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span>
+                <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">seq</span><span class="p">),)</span> <span class="o">+</span> <span class="n">args</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seq</span> <span class="o">=</span> <span class="n">seq</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">range_iter</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="n">ranges</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">step</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">range_iter</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="n">ranges</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="fm">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">start</span><span class="p">,</span> <span class="n">stop</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">range_iter</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">seq</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">stop</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="frac_enum"><a class="viewcode-back" href="../../alien.html#alien.utils.frac_enum">[docs]</a><span class="k">def</span> <span class="nf">frac_enum</span><span class="p">(</span><span class="n">seq</span><span class="p">,</span> <span class="n">start_zero</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Much like enumerate, returns an iterator yielding ordered pairs</span>
+<span class="sd">    (t, x) where x is an element of seq and t is the fraction of the</span>
+<span class="sd">    way through the sequence.</span>
+<span class="sd">    if start_zero==True, the fraction starts at 0 and ends just</span>
+<span class="sd">    short of 1. Otherwise, starts just over 0 and ends at 1.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">fracs</span><span class="p">,</span> <span class="n">step</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">seq</span><span class="p">),</span> <span class="n">endpoint</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">retstep</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">start_zero</span><span class="p">:</span>
+        <span class="n">fracs</span> <span class="o">+=</span> <span class="n">step</span>
+    <span class="k">return</span> <span class="nb">zip</span><span class="p">(</span><span class="n">fracs</span><span class="p">,</span> <span class="n">seq</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="add_slice"><a class="viewcode-back" href="../../alien.html#alien.utils.add_slice">[docs]</a><span class="k">def</span> <span class="nf">add_slice</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="nb">slice</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">slice</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns a &#39;shifted&#39; slice `slice(s.start + i, s.stop + i, s.step)`,</span>
+<span class="sd">    unless `s` is `None`, in which case it returns a slice representing</span>
+<span class="sd">    the whole window, minus a bit at the start (if `i &gt; 0`) or the end</span>
+<span class="sd">    (if `i &lt; 0`).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">s</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">start</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">i</span> <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">start</span> <span class="o">+</span> <span class="n">i</span>
+
+    <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">stop</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">stop</span> <span class="o">=</span> <span class="n">i</span> <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">stop</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">stop</span> <span class="o">+</span> <span class="n">i</span>
+
+    <span class="k">return</span> <span class="nb">slice</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">s</span><span class="o">.</span><span class="n">step</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="reshape"><a class="viewcode-back" href="../../alien.html#alien.utils.reshape">[docs]</a><span class="k">def</span> <span class="nf">reshape</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="nb">slice</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">index</span><span class="o">.</span><span class="n">step</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;index step must be 1, but yours is </span><span class="si">{</span><span class="n">index</span><span class="o">.</span><span class="n">step</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span> <span class="n">index</span><span class="o">.</span><span class="n">start</span><span class="p">]</span> <span class="o">+</span> <span class="n">shape</span> <span class="o">+</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">index</span><span class="o">.</span><span class="n">stop</span> <span class="p">:]</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">x</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">*</span><span class="n">shape</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+    <span class="k">if</span> <span class="s2">&quot;tensorflow&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)):</span>
+        <span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+
+        <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">shape</span><span class="p">)</span>
+
+    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Can&#39;t reshape tensors of type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="flatten"><a class="viewcode-back" href="../../alien.html#alien.utils.flatten">[docs]</a><span class="k">def</span> <span class="nf">flatten</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">dims</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">dims</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">reshape</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">dims</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="p">,)</span> <span class="o">+</span> <span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">reshape</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,)</span> <span class="o">+</span> <span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">dims</span><span class="p">:])</span></div>
+
+
+<div class="viewcode-block" id="diagonal"><a class="viewcode-back" href="../../alien.html#alien.utils.diagonal">[docs]</a><span class="k">def</span> <span class="nf">diagonal</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">dims</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">degree</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">bdim</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="n">bshape</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="n">bdim</span><span class="p">]</span>
+    <span class="n">mshape</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">bdim</span> <span class="p">:</span> <span class="n">bdim</span> <span class="o">+</span> <span class="n">degree</span><span class="p">]</span>
+    <span class="n">mlen</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">mshape</span><span class="p">)</span>
+    <span class="n">fshape</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">bdim</span> <span class="o">+</span> <span class="n">dims</span> <span class="o">*</span> <span class="n">degree</span> <span class="p">:]</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">reshape</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">bshape</span> <span class="o">+</span> <span class="n">dims</span> <span class="o">*</span> <span class="p">(</span><span class="n">mlen</span><span class="p">,)</span> <span class="o">+</span> <span class="n">fshape</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">dims</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diagonal</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">axis1</span><span class="o">=</span><span class="n">bdim</span><span class="p">,</span> <span class="n">axis2</span><span class="o">=</span><span class="n">bdim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">x</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">bshape</span> <span class="o">+</span> <span class="n">mshape</span> <span class="o">+</span> <span class="n">fshape</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="concatenate"><a class="viewcode-back" href="../../alien.html#alien.utils.concatenate">[docs]</a><span class="k">def</span> <span class="nf">concatenate</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Concatenates a series of datasets, or one of the supported</span>
+<span class="sd">    datatypes, along axis 0 (the samples axis)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">args</span> <span class="k">if</span> <span class="n">a</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">a</span> <span class="o">!=</span> <span class="p">[]]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="kn">from</span> <span class="nn">.data.dataset</span> <span class="kn">import</span> <span class="n">TeachableDataset</span><span class="p">,</span> <span class="n">TeachableWrapperDataset</span>
+
+    <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">TeachableWrapperDataset</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">args</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">TeachableDataset</span><span class="o">.</span><span class="n">from_data</span><span class="p">(</span><span class="n">concatenate</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">args</span><span class="p">)))</span>
+    <span class="k">elif</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">args</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">all</span><span class="p">(</span><span class="s2">&quot;torch&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">a</span><span class="p">))</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">args</span><span class="p">):</span>
+        <span class="kn">import</span> <span class="nn">torch</span>
+
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">args</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">concatenate</span><span class="p">(</span><span class="o">*</span><span class="n">vals</span><span class="p">)</span> <span class="k">for</span> <span class="n">vals</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">))</span>
+    <span class="k">elif</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">args</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">concatenate</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">args</span><span class="p">))</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()}</span>
+    <span class="k">elif</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">MutableSequence</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">args</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="p">[])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Unsupported types for concatenate function.&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="join"><a class="viewcode-back" href="../../alien.html#alien.utils.join">[docs]</a><span class="k">def</span> <span class="nf">join</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">make_ds</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Concatenates a series of datasets along axis 1 (the first</span>
+<span class="sd">    feature axis). Datasets must have same length, and if they are</span>
+<span class="sd">    numpy or torch arrays, they must have the same shape in</span>
+<span class="sd">    dimensions &gt;= 2.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># pylint: disable=import-outside-toplevel</span>
+    <span class="kn">from</span> <span class="nn">.data.dataset</span> <span class="kn">import</span> <span class="n">TeachableDataset</span><span class="p">,</span> <span class="n">TeachableWrapperDataset</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">is_iterable</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span><span class="o">.</span><span class="n">data</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">TeachableWrapperDataset</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">make_ds</span> <span class="o">:=</span> <span class="kc">True</span><span class="p">)</span> <span class="k">else</span> <span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">args</span><span class="p">]</span>
+
+
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="o">==</span> <span class="nb">tuple</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">args</span><span class="p">):</span>
+        <span class="n">args_unpacked</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+                <span class="n">args_unpacked</span> <span class="o">+=</span> <span class="p">[</span><span class="o">*</span><span class="n">a</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">args_unpacked</span> <span class="o">+=</span> <span class="p">[</span><span class="n">a</span><span class="p">]</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">args_unpacked</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">any</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">args</span><span class="p">):</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="p">[(</span><span class="n">a</span><span class="p">[</span><span class="o">...</span><span class="p">,</span><span class="kc">None</span><span class="p">]</span> <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&lt;</span> <span class="mi">2</span> <span class="k">else</span> <span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">args</span><span class="p">]</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">all</span><span class="p">(</span><span class="s2">&quot;torch&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">a</span><span class="p">))</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">args</span><span class="p">):</span>
+        <span class="kn">import</span> <span class="nn">torch</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="p">[(</span><span class="n">a</span><span class="p">[</span><span class="o">...</span><span class="p">,</span><span class="kc">None</span><span class="p">]</span> <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&lt;</span> <span class="mi">2</span> <span class="k">else</span> <span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">args</span><span class="p">]</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">args</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">TeachableDataset</span><span class="o">.</span><span class="n">from_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="k">if</span> <span class="n">make_ds</span> <span class="k">else</span> <span class="n">data</span></div>
+
+
+<div class="viewcode-block" id="is_iterable"><a class="viewcode-back" href="../../alien.html#alien.utils.is_iterable">[docs]</a><span class="k">def</span> <span class="nf">is_iterable</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="nb">iter</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="as_numpy"><a class="viewcode-back" href="../../alien.html#alien.utils.as_numpy">[docs]</a><span class="k">def</span> <span class="nf">as_numpy</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">data</span>
+    <span class="kn">from</span> <span class="nn">.data</span> <span class="kn">import</span> <span class="n">ArrayDataset</span>
+
+    <span class="n">t</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+    <span class="k">if</span> <span class="s2">&quot;torch&quot;</span> <span class="ow">in</span> <span class="n">t</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="s2">&quot;tensorflow&quot;</span> <span class="ow">in</span> <span class="n">t</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">ArrayDataset</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">__array__</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">data</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="is_one"><a class="viewcode-back" href="../../alien.html#alien.utils.is_one">[docs]</a><span class="k">def</span> <span class="nf">is_one</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">x</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">==</span> <span class="nb">int</span></div>
+
+
+<div class="viewcode-block" id="zip_dict"><a class="viewcode-back" href="../../alien.html#alien.utils.zip_dict">[docs]</a><span class="k">def</span> <span class="nf">zip_dict</span><span class="p">(</span><span class="o">*</span><span class="n">dicts</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Similar behavior of zip(*) for dictionaries.</span>
+<span class="sd">    Assumes that all dicts have the same keys.</span>
+<span class="sd">    &gt;&gt;&gt; zip_dict({&#39;a&#39;: 1}, {&#39;a&#39;: 2})</span>
+<span class="sd">    {&#39;a&#39;: (1, 2)}</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        _type_: _description_</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dicts</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">dicts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()}</span></div>
+
+
+<div class="viewcode-block" id="axes_except"><a class="viewcode-back" href="../../alien.html#alien.utils.axes_except">[docs]</a><span class="k">def</span> <span class="nf">axes_except</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">non_axes</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">isint</span><span class="p">(</span><span class="n">non_axes</span><span class="p">):</span>
+        <span class="n">non_axes</span> <span class="o">=</span> <span class="p">(</span><span class="n">non_axes</span><span class="p">,)</span>
+    <span class="n">non_axes</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">a</span> <span class="o">%</span> <span class="n">X</span><span class="o">.</span><span class="n">ndim</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">non_axes</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">ndim</span><span class="p">)</span> <span class="k">if</span> <span class="n">a</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">non_axes</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="sum_except"><a class="viewcode-back" href="../../alien.html#alien.utils.sum_except">[docs]</a><span class="k">def</span> <span class="nf">sum_except</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">non_axes</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">X</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="n">axes_except</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">non_axes</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="no_default"><a class="viewcode-back" href="../../alien.html#alien.utils.no_default">[docs]</a><span class="k">def</span> <span class="nf">no_default</span><span class="p">():</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;no_default is used as a unique reference, and should not be called&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SelfDict"><a class="viewcode-back" href="../../alien.html#alien.utils.SelfDict">[docs]</a><span class="k">class</span> <span class="nc">SelfDict</span><span class="p">(</span><span class="nb">dict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Subclass of dict class which allows you to refer to,</span>
+<span class="sd">    eg., d[&#39;attr&#39;] as d.attr and vice versa.</span>
+
+<span class="sd">    You can also index with lists, where</span>
+<span class="sd">    d[[&#39;a&#39;, &#39;b&#39;]] == {&#39;a&#39;: d[&#39;a&#39;], &#39;b&#39;: d[&#39;b&#39;]}</span>
+<span class="sd">    Similarly with pop()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">no_default</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+                <span class="bp">self</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">SelfDict</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__setitem__</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">SelfDict</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__setitem__</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;__&quot;</span><span class="p">):</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="c1"># if self.__default == no_default:</span>
+            <span class="k">return</span> <span class="n">SelfDict</span><span class="p">({</span><span class="n">k</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">key</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="fm">__iter__</span><span class="p">()})</span>
+            <span class="c1"># else:</span>
+            <span class="c1">#    return SelfDict({k:(s[k] if k in s else self.__default) for k in key})</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># if key not in self and self.__default != no_default:</span>
+            <span class="c1">#    return self.__default</span>
+            <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+<div class="viewcode-block" id="SelfDict.pop"><a class="viewcode-back" href="../../alien.html#alien.utils.SelfDict.pop">[docs]</a>    <span class="k">def</span> <span class="nf">pop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">no_default</span><span class="p">):</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span>
+        <span class="c1"># default == self.__default if default == no_default else default</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">default</span> <span class="o">==</span> <span class="n">no_default</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">SelfDict</span><span class="p">({</span><span class="n">k</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">key</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="fm">__iter__</span><span class="p">()})</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">SelfDict</span><span class="p">({</span><span class="n">k</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">default</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">key</span><span class="p">})</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="k">if</span> <span class="n">default</span> <span class="o">==</span> <span class="n">no_default</span> <span class="k">else</span> <span class="n">s</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">default</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="CachedDict"><a class="viewcode-back" href="../../alien.html#alien.utils.CachedDict">[docs]</a><span class="k">class</span> <span class="nc">CachedDict</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">get</span><span class="p">,</span> <span class="o">*</span><span class="n">init_keys</span><span class="p">,</span> <span class="o">**</span><span class="n">d2</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get</span> <span class="o">=</span> <span class="n">get</span><span class="o">.</span><span class="fm">__get__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">init_keys</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">Mapping</span><span class="p">):</span>
+            <span class="n">d1</span><span class="p">,</span> <span class="n">init_keys</span> <span class="o">=</span> <span class="n">init_keys</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">init_keys</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">d1</span> <span class="o">=</span> <span class="p">{}</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">d1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">d2</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">init_keys</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="p">(</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">init_keys</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">MutableSet</span><span class="p">)</span> <span class="ow">or</span> 
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">init_keys</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">MutableSequence</span><span class="p">)):</span>
+            <span class="n">init_keys</span> <span class="o">=</span> <span class="n">init_keys</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="p">[</span><span class="bp">self</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">init_keys</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;keys&#39;</span><span class="p">,</span> <span class="s1">&#39;values&#39;</span><span class="p">,</span> <span class="s1">&#39;items&#39;</span><span class="p">,</span> <span class="s1">&#39;get&#39;</span><span class="p">,</span> <span class="s1">&#39;pop&#39;</span><span class="p">,</span> <span class="s1">&#39;__iter__&#39;</span><span class="p">,</span> <span class="s1">&#39;__contains__&#39;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">,</span> <span class="n">m</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+        <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">return</span> <span class="n">value</span>
+
+    <span class="fm">__getitem__</span> <span class="o">=</span> <span class="fm">__getattr__</span> <span class="o">=</span> <span class="fm">__call__</span></div>
+
+
+<div class="viewcode-block" id="dot_last"><a class="viewcode-back" href="../../alien.html#alien.utils.dot_last">[docs]</a><span class="k">def</span> <span class="nf">dot_last</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">a</span> <span class="o">*</span> <span class="n">b</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>alien.stats &mdash; ALIEN 1.1.2 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            ALIEN
+          </a>
+              <div class="version">
+                1.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../active_learning.html">What is active learning?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../alien.models.html">alien.models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../alien.selection.html">alien.selection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../alien.benchmarks.html">alien.benchmarks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../alien.data.html">alien.data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../alien.sample_generation.html">alien.sample_generation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">ALIEN</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">alien.stats</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for alien.stats</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">cycle</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">.decorators</span> <span class="kn">import</span> <span class="n">flatten_batch</span><span class="p">,</span> <span class="n">normalize_args</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">shift_seed</span>
+
+<span class="c1"># pylint: disable=no-value-for-parameter</span>
+
+
+<div class="viewcode-block" id="multiply_std_dev"><a class="viewcode-back" href="../../alien.html#alien.stats.multiply_std_dev">[docs]</a><span class="nd">@flatten_batch</span><span class="p">(</span><span class="n">bdim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">multiply_std_dev</span><span class="p">(</span><span class="n">ensemble</span><span class="p">,</span> <span class="n">multiple</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Modifies an ensemble to change its standard deviation by</span>
+<span class="sd">    a factor of &#39;multiple&#39;.</span>
+
+<span class="sd">    :param ensemble: ensembles are over the last dimension</span>
+<span class="sd">        only.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">multiple</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">ensemble</span>
+    <span class="n">means</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">ensemble</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">ensemble</span> <span class="o">=</span> <span class="n">multiple</span> <span class="o">*</span> <span class="n">ensemble</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">multiple</span><span class="p">)</span> <span class="o">*</span> <span class="n">means</span>
+    <span class="k">return</span> <span class="n">ensemble</span></div>
+
+
+<div class="viewcode-block" id="augment_ensemble"><a class="viewcode-back" href="../../alien.html#alien.stats.augment_ensemble">[docs]</a><span class="nd">@flatten_batch</span><span class="p">(</span><span class="n">bdim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">augment_ensemble</span><span class="p">(</span><span class="n">preds</span><span class="p">,</span> <span class="n">N</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">multiple</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Augments ensemble predictions to an ensemble of size N</span>
+<span class="sd">    per variable.</span>
+
+<span class="sd">    Extra observations are generated from a multivariate normal</span>
+<span class="sd">    distribution to have the same covariances (within the last</span>
+<span class="sd">    batch dimension) as existing observations</span>
+
+<span class="sd">    :param multiple: returns an ensemble with &#39;multiple&#39;</span>
+<span class="sd">        times the covariance of the original.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">multiple</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">preds</span> <span class="o">=</span> <span class="n">multiply_std_dev</span><span class="p">(</span><span class="n">preds</span><span class="p">,</span> <span class="n">multiple</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">N</span> <span class="o">&lt;=</span> <span class="n">preds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="n">preds</span>
+
+    <span class="n">mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">preds</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">cov</span> <span class="o">=</span> <span class="n">covariance_from_ensemble</span><span class="p">(</span><span class="n">preds</span><span class="p">)</span>
+    <span class="n">aug</span> <span class="o">=</span> <span class="n">ensemble_from_covariance</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">cov</span><span class="p">,</span> <span class="n">N</span> <span class="o">-</span> <span class="n">preds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">rng</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">preds</span><span class="p">,</span> <span class="n">aug</span><span class="p">),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span></div>
+
+
+<span class="c1"># @flatten_batch(bdim=-2)</span>
+<div class="viewcode-block" id="covariance_from_ensemble"><a class="viewcode-back" href="../../alien.html#alien.stats.covariance_from_ensemble">[docs]</a><span class="k">def</span> <span class="nf">covariance_from_ensemble</span><span class="p">(</span><span class="n">preds</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="c1"># weights.shape = (3,)</span>
+    <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">preds</span> <span class="o">=</span> <span class="n">preds</span> <span class="o">*</span> <span class="n">weights</span>
+
+    <span class="k">if</span> <span class="n">preds</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">cov</span><span class="p">(</span><span class="n">preds</span><span class="p">)</span>
+
+    <span class="c1"># preds.shape = (N, 50, 3)</span>
+
+    <span class="c1"># subtract mean, and then reshape:</span>
+    <span class="n">p0</span> <span class="o">=</span> <span class="p">(</span><span class="n">preds</span> <span class="o">-</span> <span class="n">preds</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">preds</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="c1">#                       3N different means</span>
+
+    <span class="c1"># p0.shape = (N, 150)</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">p0</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">*</span> <span class="n">p0</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="o">...</span><span class="p">])</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">preds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span></div>
+    <span class="c1"># output.shape (N, N)</span>
+
+
+<div class="viewcode-block" id="std_dev_from_ensemble"><a class="viewcode-back" href="../../alien.html#alien.stats.std_dev_from_ensemble">[docs]</a><span class="k">def</span> <span class="nf">std_dev_from_ensemble</span><span class="p">(</span><span class="n">preds</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">preds</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">preds</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+
+<span class="c1"># @flatten_batch(bdim=-2, to_flatten=2, degree)</span>
+<div class="viewcode-block" id="ensemble_from_covariance"><a class="viewcode-back" href="../../alien.html#alien.stats.ensemble_from_covariance">[docs]</a><span class="k">def</span> <span class="nf">ensemble_from_covariance</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">cov</span><span class="p">,</span> <span class="n">ensemble_size</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">random_seed</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">rng</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">random_seed</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">moveaxis</span><span class="p">(</span>
+        <span class="n">rng</span><span class="o">.</span><span class="n">multivariate_normal</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">cov</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">ensemble_size</span><span class="p">),</span>
+        <span class="o">-</span><span class="mi">2</span><span class="p">,</span>
+        <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="similarity_gaussian"><a class="viewcode-back" href="../../alien.html#alien.stats.similarity_gaussian">[docs]</a><span class="nd">@flatten_batch</span><span class="p">(</span><span class="n">bdim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+<span class="nd">@normalize_args</span><span class="p">(</span><span class="n">euclidean</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">similarity_gaussian</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">relevant_features</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes a similarity matrix from a Gaussian function of distances,</span>
+<span class="sd">    as follows:</span>
+<span class="sd">        Restricts X to only look at &#39;relevant_features&#39;.</span>
+
+<span class="sd">        If &#39;normalize&#39; is True, rescales the input to have standard</span>
+<span class="sd">        deviation 1 in each feature, then rescales by another factor</span>
+<span class="sd">        of sqrt(X.shape[-1]).</span>
+
+<span class="sd">        Then the distance matrix is put into a Gaussian of std dev</span>
+<span class="sd">        equal to &#39;scale&#39;.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">relevant_features</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">relevant_features</span><span class="p">]</span>
+
+    <span class="c1"># TODO: if normalize: ...</span>
+    <span class="n">distance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">-</span> <span class="n">X</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">similarity</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">distance</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">scale</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">similarity</span></div>
+
+
+<div class="viewcode-block" id="similarity_exp"><a class="viewcode-back" href="../../alien.html#alien.stats.similarity_exp">[docs]</a><span class="nd">@flatten_batch</span><span class="p">(</span><span class="n">bdim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+<span class="nd">@normalize_args</span><span class="p">(</span><span class="n">euclidean</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">similarity_exp</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">relevant_features</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+    <span class="c1"># TODO: if normalize ...</span>
+    <span class="k">if</span> <span class="n">relevant_features</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">relevant_features</span><span class="p">]</span>
+
+    <span class="n">distance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">-</span> <span class="n">X</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">similarity</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">distance</span> <span class="o">/</span> <span class="n">scale</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">similarity</span></div>
+
+
+<div class="viewcode-block" id="similarity_cosine"><a class="viewcode-back" href="../../alien.html#alien.stats.similarity_cosine">[docs]</a><span class="nd">@flatten_batch</span><span class="p">(</span><span class="n">bdim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+<span class="nd">@normalize_args</span>
+<span class="k">def</span> <span class="nf">similarity_cosine</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">relevant_indices</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">relevant_indices</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">relevant_indices</span><span class="p">]</span>
+
+    <span class="n">l</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">l</span><span class="p">[</span><span class="n">l</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">T</span> <span class="o">/</span> <span class="n">l</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="o">*</span> <span class="n">X</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="covariance_from_similarity"><a class="viewcode-back" href="../../alien.html#alien.stats.covariance_from_similarity">[docs]</a><span class="k">def</span> <span class="nf">covariance_from_similarity</span><span class="p">(</span><span class="n">similarity</span><span class="p">,</span> <span class="n">variance</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a similarity matrix, and a vector of variances,</span>
+<span class="sd">    returns a covariance matrix, using the similarity matrix</span>
+<span class="sd">    as correlations.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">std</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">variance</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">std</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">similarity</span> <span class="o">*</span> <span class="n">std</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:]</span></div>
+
+
+<div class="viewcode-block" id="joint_entropy"><a class="viewcode-back" href="../../alien.html#alien.stats.joint_entropy">[docs]</a><span class="nd">@flatten_batch</span><span class="p">(</span><span class="n">bdim</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">joint_entropy</span><span class="p">(</span><span class="n">X</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Not regularized. Is liable to underestimate the</span>
+<span class="sd">    entropy, i.e., samples may actually be less correlated</span>
+<span class="sd">    than they appear from this calculation, due to the</span>
+<span class="sd">    limited size of the ensemble.</span>
+
+<span class="sd">    :param X: ensemble of class predictions, of shape</span>
+<span class="sd">        ... x batch_size x ensemble_size</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">entropy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">X_b</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">X</span><span class="p">):</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">X_b</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">return_counts</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">probs</span> <span class="o">=</span> <span class="n">counts</span> <span class="o">/</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">entropy</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="n">probs</span><span class="p">)</span> <span class="o">*</span> <span class="n">probs</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">entropy</span></div>
+
+
+<div class="viewcode-block" id="joint_entropy_regularized"><a class="viewcode-back" href="../../alien.html#alien.stats.joint_entropy_regularized">[docs]</a><span class="nd">@flatten_batch</span><span class="p">(</span><span class="n">bdim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">joint_entropy_regularized</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">n_classes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">random_seed</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :param X: ensemble of class predictions, of shape</span>
+<span class="sd">        ... x batch_size x ensemble_size</span>
+
+<span class="sd">    :param n_classes: to avoid computing it, you can</span>
+<span class="sd">        pass in the number of classes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">rng</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">shift_seed</span><span class="p">(</span><span class="n">random_seed</span><span class="p">,</span> <span class="mi">1234567</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">n_classes</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>  <span class="c1"># will I continue with this 1-classes distinction??</span>
+        <span class="n">n_classes</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="k">if</span> <span class="n">n_classes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">n_classes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">X</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">n_classes</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="c1"># If we don&#39;t have at least 2 distinct classes, there is no information</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="k">assert</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span>
+        <span class="n">n_classes</span>
+    <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Must have ensemble of size at least </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">n_classes</span><span class="p">)</span><span class="si">}</span><span class="s2">, whereas yours is size </span><span class="si">{</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">.&quot;</span>
+
+    <span class="n">batch_size</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+    <span class="c1"># for now, aways take sub-batches of size so that in principle</span>
+    <span class="c1"># the ensemble could find all the information</span>
+    <span class="n">sub_batch_size</span> <span class="o">=</span> <span class="n">n_classes</span> <span class="o">**</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">n_classes</span><span class="p">))</span>
+
+    <span class="c1"># create subsampling indices</span>
+    <span class="n">sub_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">batch_size</span> <span class="o">*</span> <span class="p">(</span><span class="n">batch_size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="group_sizes"><a class="viewcode-back" href="../../alien.html#alien.stats.group_sizes">[docs]</a><span class="k">def</span> <span class="nf">group_sizes</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">group_size</span><span class="p">):</span>
+    <span class="n">sizes</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">size</span> <span class="o">/</span> <span class="n">group_size</span><span class="p">)</span> <span class="o">*</span> <span class="p">[</span><span class="n">group_size</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">size</span> <span class="o">%</span> <span class="n">group_size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">stub</span> <span class="o">=</span> <span class="n">size</span> <span class="o">%</span> <span class="n">group_size</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">cycle</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sizes</span><span class="p">))):</span>
+            <span class="k">if</span> <span class="n">sizes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">stub</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="n">sizes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-=</span> <span class="mi">1</span>
+            <span class="n">stub</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">sizes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">stub</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">sizes</span></div>
+
+
+<div class="viewcode-block" id="group_edges"><a class="viewcode-back" href="../../alien.html#alien.stats.group_edges">[docs]</a><span class="k">def</span> <span class="nf">group_edges</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">group_size</span><span class="p">):</span>
+    <span class="n">sizes</span> <span class="o">=</span> <span class="n">group_sizes</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">group_size</span><span class="p">)</span>
+    <span class="n">edges</span> <span class="o">=</span> <span class="p">[</span><span class="nb">sum</span><span class="p">(</span><span class="n">sizes</span><span class="p">[:</span><span class="n">i</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sizes</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">edges</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">edges</span><span class="p">[</span><span class="mi">1</span><span class="p">:]))</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

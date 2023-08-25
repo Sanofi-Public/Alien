@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>alien.benchmarks &mdash; ALIEN 1.1.2 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="alien.data" href="alien.data.html" />
+    <link rel="prev" title="alien.selection" href="alien.selection.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            ALIEN
+          </a>
+              <div class="version">
+                1.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="active_learning.html">What is active learning?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="alien.models.html">alien.models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="alien.selection.html">alien.selection</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">alien.benchmarks</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-alien.benchmarks.metrics">alien.benchmarks.metrics module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#alien.benchmarks.metrics.conf_int"><code class="docutils literal notranslate"><span class="pre">conf_int()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#alien.benchmarks.metrics.sem"><code class="docutils literal notranslate"><span class="pre">sem()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#alien.benchmarks.metrics.Score"><code class="docutils literal notranslate"><span class="pre">Score</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#alien.benchmarks.metrics.Score.default_filename"><code class="docutils literal notranslate"><span class="pre">Score.default_filename</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.benchmarks.metrics.Score.append"><code class="docutils literal notranslate"><span class="pre">Score.append()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.benchmarks.metrics.Score.save"><code class="docutils literal notranslate"><span class="pre">Score.save()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.benchmarks.metrics.Score.load"><code class="docutils literal notranslate"><span class="pre">Score.load()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.benchmarks.metrics.Score.load_many"><code class="docutils literal notranslate"><span class="pre">Score.load_many()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.benchmarks.metrics.Score.average_runs"><code class="docutils literal notranslate"><span class="pre">Score.average_runs()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#alien.benchmarks.metrics.TopScore"><code class="docutils literal notranslate"><span class="pre">TopScore</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#alien.benchmarks.metrics.TopScore.compute"><code class="docutils literal notranslate"><span class="pre">TopScore.compute()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.benchmarks.metrics.TopScore.append"><code class="docutils literal notranslate"><span class="pre">TopScore.append()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.benchmarks.metrics.TopScore.average_runs"><code class="docutils literal notranslate"><span class="pre">TopScore.average_runs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.benchmarks.metrics.TopScore.default_filename"><code class="docutils literal notranslate"><span class="pre">TopScore.default_filename</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.benchmarks.metrics.TopScore.load"><code class="docutils literal notranslate"><span class="pre">TopScore.load()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.benchmarks.metrics.TopScore.load_many"><code class="docutils literal notranslate"><span class="pre">TopScore.load_many()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.benchmarks.metrics.TopScore.save"><code class="docutils literal notranslate"><span class="pre">TopScore.save()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#alien.benchmarks.metrics.RMSE"><code class="docutils literal notranslate"><span class="pre">RMSE</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#alien.benchmarks.metrics.RMSE.compute"><code class="docutils literal notranslate"><span class="pre">RMSE.compute()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.benchmarks.metrics.RMSE.from_folder"><code class="docutils literal notranslate"><span class="pre">RMSE.from_folder()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.benchmarks.metrics.RMSE.append"><code class="docutils literal notranslate"><span class="pre">RMSE.append()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.benchmarks.metrics.RMSE.average_runs"><code class="docutils literal notranslate"><span class="pre">RMSE.average_runs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.benchmarks.metrics.RMSE.default_filename"><code class="docutils literal notranslate"><span class="pre">RMSE.default_filename</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.benchmarks.metrics.RMSE.load"><code class="docutils literal notranslate"><span class="pre">RMSE.load()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.benchmarks.metrics.RMSE.load_many"><code class="docutils literal notranslate"><span class="pre">RMSE.load_many()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.benchmarks.metrics.RMSE.save"><code class="docutils literal notranslate"><span class="pre">RMSE.save()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#alien.benchmarks.metrics.Scatter"><code class="docutils literal notranslate"><span class="pre">Scatter</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#alien.benchmarks.metrics.Scatter.compute"><code class="docutils literal notranslate"><span class="pre">Scatter.compute()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.benchmarks.metrics.Scatter.RMSE"><code class="docutils literal notranslate"><span class="pre">Scatter.RMSE()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.benchmarks.metrics.Scatter.plot"><code class="docutils literal notranslate"><span class="pre">Scatter.plot()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.benchmarks.metrics.Scatter.save"><code class="docutils literal notranslate"><span class="pre">Scatter.save()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.benchmarks.metrics.Scatter.load"><code class="docutils literal notranslate"><span class="pre">Scatter.load()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#alien.benchmarks.metrics.plot_scores"><code class="docutils literal notranslate"><span class="pre">plot_scores()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-alien.benchmarks.oracle">alien.benchmarks.oracle module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#alien.benchmarks.oracle.Oracle"><code class="docutils literal notranslate"><span class="pre">Oracle</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#alien.benchmarks.oracle.Oracle.get_label"><code class="docutils literal notranslate"><span class="pre">Oracle.get_label()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.benchmarks.oracle.Oracle.get_labels"><code class="docutils literal notranslate"><span class="pre">Oracle.get_labels()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#alien.benchmarks.oracle.SetOracle"><code class="docutils literal notranslate"><span class="pre">SetOracle</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#alien.benchmarks.oracle.SetOracle.get_label"><code class="docutils literal notranslate"><span class="pre">SetOracle.get_label()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.benchmarks.oracle.SetOracle.generate_sample"><code class="docutils literal notranslate"><span class="pre">SetOracle.generate_sample()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.benchmarks.oracle.SetOracle.generate_samples"><code class="docutils literal notranslate"><span class="pre">SetOracle.generate_samples()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.benchmarks.oracle.SetOracle.get_labels"><code class="docutils literal notranslate"><span class="pre">SetOracle.get_labels()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.benchmarks.oracle.SetOracle.labels"><code class="docutils literal notranslate"><span class="pre">SetOracle.labels</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.benchmarks.oracle.SetOracle.remove_data_indices"><code class="docutils literal notranslate"><span class="pre">SetOracle.remove_data_indices()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.benchmarks.oracle.SetOracle.remove_sample"><code class="docutils literal notranslate"><span class="pre">SetOracle.remove_sample()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.benchmarks.oracle.SetOracle.remove_samples"><code class="docutils literal notranslate"><span class="pre">SetOracle.remove_samples()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.benchmarks.oracle.SetOracle.reshuffle"><code class="docutils literal notranslate"><span class="pre">SetOracle.reshuffle()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-alien.benchmarks.retrospective">alien.benchmarks.retrospective module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#alien.benchmarks.retrospective.run_experiments"><code class="docutils literal notranslate"><span class="pre">run_experiments()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-alien.benchmarks.uncertainty_metrics">alien.benchmarks.uncertainty_metrics module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#alien.benchmarks.uncertainty_metrics.KL_divergence"><code class="docutils literal notranslate"><span class="pre">KL_divergence()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#alien.benchmarks.uncertainty_metrics.best_multiple"><code class="docutils literal notranslate"><span class="pre">best_multiple()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#alien.benchmarks.uncertainty_metrics.binary_optimize"><code class="docutils literal notranslate"><span class="pre">binary_optimize()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#alien.benchmarks.uncertainty_metrics.search_lower"><code class="docutils literal notranslate"><span class="pre">search_lower()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#alien.benchmarks.uncertainty_metrics.search_upper"><code class="docutils literal notranslate"><span class="pre">search_upper()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#alien.benchmarks.uncertainty_metrics.plot_errors"><code class="docutils literal notranslate"><span class="pre">plot_errors()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-alien.benchmarks">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="alien.data.html">alien.data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="alien.sample_generation.html">alien.sample_generation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">ALIEN</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">alien.benchmarks</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/alien.benchmarks.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="alien-benchmarks">
+<h1>alien.benchmarks<a class="headerlink" href="#alien-benchmarks" title="Permalink to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading"></a></h2>
+</section>
+<section id="module-alien.benchmarks.metrics">
+<span id="alien-benchmarks-metrics-module"></span><h2>alien.benchmarks.metrics module<a class="headerlink" href="#module-alien.benchmarks.metrics" title="Permalink to this heading"></a></h2>
+<p>Module for computing metrics and plotting.
+Confidence intervals, RMSE, scatter plots.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="alien.benchmarks.metrics.conf_int">
+<span class="sig-prename descclassname"><span class="pre">alien.benchmarks.metrics.</span></span><span class="sig-name descname"><span class="pre">conf_int</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">confidence_level</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">standard_error</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">len_x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">_SupportsArray</span><span class="p"><span class="pre">[</span></span><span class="pre">dtype</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">_NestedSequence</span><span class="p"><span class="pre">[</span></span><span class="pre">_SupportsArray</span><span class="p"><span class="pre">[</span></span><span class="pre">dtype</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">complex</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bytes</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">_NestedSequence</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">complex</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bytes</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/benchmarks/metrics.html#conf_int"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.benchmarks.metrics.conf_int" title="Permalink to this definition"></a></dt>
+<dd><p>Compute confidence interval using a normal or t-distribution</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>confidence_level</strong> (<em>_type_</em>) – _description_</p></li>
+<li><p><strong>standard_error</strong> (<em>_type_</em>) – _description_</p></li>
+<li><p><strong>len_x</strong> (<em>_type_</em><em>, </em><em>optional</em>) – _description_. Defaults to None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>_description_</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>_type_</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="alien.benchmarks.metrics.sem">
+<span class="sig-prename descclassname"><span class="pre">alien.benchmarks.metrics.</span></span><span class="sig-name descname"><span class="pre">sem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_SupportsArray</span><span class="p"><span class="pre">[</span></span><span class="pre">dtype</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">_NestedSequence</span><span class="p"><span class="pre">[</span></span><span class="pre">_SupportsArray</span><span class="p"><span class="pre">[</span></span><span class="pre">dtype</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">complex</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bytes</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">_NestedSequence</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">complex</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bytes</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">_SupportsArray</span><span class="p"><span class="pre">[</span></span><span class="pre">dtype</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">_NestedSequence</span><span class="p"><span class="pre">[</span></span><span class="pre">_SupportsArray</span><span class="p"><span class="pre">[</span></span><span class="pre">dtype</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">complex</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bytes</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">_NestedSequence</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">complex</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bytes</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/alien/benchmarks/metrics.html#sem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.benchmarks.metrics.sem" title="Permalink to this definition"></a></dt>
+<dd><p>Compute standard error of the mean.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>ArrayLike</em>) – array to compute SEM for.</p></li>
+<li><p><strong>axis</strong> (<em>int</em><em>, </em><em>optional</em>) – Axis in x to make the computation along. Defaults to 0.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Array of computed SEMs.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ArrayLike</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="alien.benchmarks.metrics.Score">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">alien.benchmarks.metrics.</span></span><span class="sig-name descname"><span class="pre">Score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">array([],</span> <span class="pre">dtype=float64)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">array([],</span> <span class="pre">dtype=float64)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">err</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/benchmarks/metrics.html#Score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.benchmarks.metrics.Score" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="alien.benchmarks.metrics.Score.default_filename">
+<span class="sig-name descname"><span class="pre">default_filename</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'*.pickle'</span></em><a class="headerlink" href="#alien.benchmarks.metrics.Score.default_filename" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.benchmarks.metrics.Score.append">
+<span class="sig-name descname"><span class="pre">append</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_val</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_val</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/benchmarks/metrics.html#Score.append"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.benchmarks.metrics.Score.append" title="Permalink to this definition"></a></dt>
+<dd><p>Append point to self.x and self.y</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x_val</strong> (<em>float</em>) – x value to append</p></li>
+<li><p><strong>y_val</strong> (<em>float</em>) – y value to append</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.benchmarks.metrics.Score.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/benchmarks/metrics.html#Score.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.benchmarks.metrics.Score.save" title="Permalink to this definition"></a></dt>
+<dd><p>Save Score object to given filepath.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>file_path</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – Path to save object. Defaults to None.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.benchmarks.metrics.Score.load">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/benchmarks/metrics.html#Score.load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.benchmarks.metrics.Score.load" title="Permalink to this definition"></a></dt>
+<dd><p>Load a Score object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>file</strong> (<em>str</em>) – File path location.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Score object to load.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#alien.benchmarks.metrics.Score" title="alien.benchmarks.metrics.Score">Score</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.benchmarks.metrics.Score.load_many">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load_many</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">scores</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'*.pickle'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span></span></span><a class="reference internal" href="_modules/alien/benchmarks/metrics.html#Score.load_many"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.benchmarks.metrics.Score.load_many" title="Permalink to this definition"></a></dt>
+<dd><p>Loads many Scores at once, and returns a list.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>*args</strong> – several filenames, or one filename with wildcards, or
+one folder name (which will have wildcards appended)</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>_description_</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list[<a class="reference internal" href="#alien.benchmarks.metrics.Score" title="alien.benchmarks.metrics.Score">Score</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.benchmarks.metrics.Score.average_runs">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">average_runs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'longest'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">err</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'*.pickle'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/benchmarks/metrics.html#Score.average_runs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.benchmarks.metrics.Score.average_runs" title="Permalink to this definition"></a></dt>
+<dd><p>_summary_</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>args</strong> – _description_</p></li>
+<li><p><strong>length</strong> (<em>str</em><em>, </em><em>optional</em>) – _description_. Defaults to “longest”.</p></li>
+<li><p><strong>name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – _description_. Defaults to None.</p></li>
+<li><p><strong>file_path</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – File path to save object. Defaults to None.</p></li>
+<li><p><strong>save</strong> (<em>bool</em><em>, </em><em>optional</em>) – whether to save returned object. Defaults to False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>NotImplementedError</strong> – _description_</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>average score to return</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#alien.benchmarks.metrics.Score" title="alien.benchmarks.metrics.Score">Score</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="alien.benchmarks.metrics.TopScore">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">alien.benchmarks.metrics.</span></span><span class="sig-name descname"><span class="pre">TopScore</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">array([],</span> <span class="pre">dtype=float64)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">array([],</span> <span class="pre">dtype=float64)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">err</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/benchmarks/metrics.html#TopScore"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.benchmarks.metrics.TopScore" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#alien.benchmarks.metrics.Score" title="alien.benchmarks.metrics.Score"><code class="xref py py-class docutils literal notranslate"><span class="pre">Score</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.benchmarks.metrics.TopScore.compute">
+<span class="sig-name descname"><span class="pre">compute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_SupportsArray</span><span class="p"><span class="pre">[</span></span><span class="pre">dtype</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">_NestedSequence</span><span class="p"><span class="pre">[</span></span><span class="pre">_SupportsArray</span><span class="p"><span class="pre">[</span></span><span class="pre">dtype</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">complex</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bytes</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">_NestedSequence</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">complex</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bytes</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">average_over</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/benchmarks/metrics.html#TopScore.compute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.benchmarks.metrics.TopScore.compute" title="Permalink to this definition"></a></dt>
+<dd><p>Compute top score.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>_type_</em>) – _description_</p></li>
+<li><p><strong>labels</strong> (<em>ArrayLike</em>) – _description_</p></li>
+<li><p><strong>average_over</strong> (<em>int</em><em>, </em><em>optional</em>) – _description_. Defaults to 1.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>_description_</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>_type_</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.benchmarks.metrics.TopScore.append">
+<span class="sig-name descname"><span class="pre">append</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_val</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_val</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.benchmarks.metrics.TopScore.append" title="Permalink to this definition"></a></dt>
+<dd><p>Append point to self.x and self.y</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x_val</strong> (<em>float</em>) – x value to append</p></li>
+<li><p><strong>y_val</strong> (<em>float</em>) – y value to append</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.benchmarks.metrics.TopScore.average_runs">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">average_runs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'longest'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">err</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'*.pickle'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.benchmarks.metrics.TopScore.average_runs" title="Permalink to this definition"></a></dt>
+<dd><p>_summary_</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>args</strong> – _description_</p></li>
+<li><p><strong>length</strong> (<em>str</em><em>, </em><em>optional</em>) – _description_. Defaults to “longest”.</p></li>
+<li><p><strong>name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – _description_. Defaults to None.</p></li>
+<li><p><strong>file_path</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – File path to save object. Defaults to None.</p></li>
+<li><p><strong>save</strong> (<em>bool</em><em>, </em><em>optional</em>) – whether to save returned object. Defaults to False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>NotImplementedError</strong> – _description_</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>average score to return</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#alien.benchmarks.metrics.Score" title="alien.benchmarks.metrics.Score">Score</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="alien.benchmarks.metrics.TopScore.default_filename">
+<span class="sig-name descname"><span class="pre">default_filename</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'*.pickle'</span></em><a class="headerlink" href="#alien.benchmarks.metrics.TopScore.default_filename" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.benchmarks.metrics.TopScore.load">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.benchmarks.metrics.TopScore.load" title="Permalink to this definition"></a></dt>
+<dd><p>Load a Score object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>file</strong> (<em>str</em>) – File path location.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Score object to load.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#alien.benchmarks.metrics.Score" title="alien.benchmarks.metrics.Score">Score</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.benchmarks.metrics.TopScore.load_many">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load_many</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">scores</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'*.pickle'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span></span></span><a class="headerlink" href="#alien.benchmarks.metrics.TopScore.load_many" title="Permalink to this definition"></a></dt>
+<dd><p>Loads many Scores at once, and returns a list.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>*args</strong> – several filenames, or one filename with wildcards, or
+one folder name (which will have wildcards appended)</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>_description_</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list[<a class="reference internal" href="#alien.benchmarks.metrics.Score" title="alien.benchmarks.metrics.Score">Score</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.benchmarks.metrics.TopScore.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.benchmarks.metrics.TopScore.save" title="Permalink to this definition"></a></dt>
+<dd><p>Save Score object to given filepath.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>file_path</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – Path to save object. Defaults to None.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="alien.benchmarks.metrics.RMSE">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">alien.benchmarks.metrics.</span></span><span class="sig-name descname"><span class="pre">RMSE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scatter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">('samples',</span> <span class="pre">'RMSE')</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/benchmarks/metrics.html#RMSE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.benchmarks.metrics.RMSE" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#alien.benchmarks.metrics.Score" title="alien.benchmarks.metrics.Score"><code class="xref py py-class docutils literal notranslate"><span class="pre">Score</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.benchmarks.metrics.RMSE.compute">
+<span class="sig-name descname"><span class="pre">compute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/benchmarks/metrics.html#RMSE.compute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.benchmarks.metrics.RMSE.compute" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.benchmarks.metrics.RMSE.from_folder">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_folder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">folder</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/benchmarks/metrics.html#RMSE.from_folder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.benchmarks.metrics.RMSE.from_folder" title="Permalink to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>folder</strong> (<em>str</em>) – _description_</p></li>
+<li><p><strong>name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – _description_. Defaults to None.</p></li>
+<li><p><strong>file_path</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – _description_. Defaults to None.</p></li>
+<li><p><strong>save</strong> (<em>bool</em><em>, </em><em>optional</em>) – _description_. Defaults to False.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.benchmarks.metrics.RMSE.append">
+<span class="sig-name descname"><span class="pre">append</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_val</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_val</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.benchmarks.metrics.RMSE.append" title="Permalink to this definition"></a></dt>
+<dd><p>Append point to self.x and self.y</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x_val</strong> (<em>float</em>) – x value to append</p></li>
+<li><p><strong>y_val</strong> (<em>float</em>) – y value to append</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.benchmarks.metrics.RMSE.average_runs">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">average_runs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'longest'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">err</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'*.pickle'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.benchmarks.metrics.RMSE.average_runs" title="Permalink to this definition"></a></dt>
+<dd><p>_summary_</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>args</strong> – _description_</p></li>
+<li><p><strong>length</strong> (<em>str</em><em>, </em><em>optional</em>) – _description_. Defaults to “longest”.</p></li>
+<li><p><strong>name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – _description_. Defaults to None.</p></li>
+<li><p><strong>file_path</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – File path to save object. Defaults to None.</p></li>
+<li><p><strong>save</strong> (<em>bool</em><em>, </em><em>optional</em>) – whether to save returned object. Defaults to False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>NotImplementedError</strong> – _description_</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>average score to return</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#alien.benchmarks.metrics.Score" title="alien.benchmarks.metrics.Score">Score</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="alien.benchmarks.metrics.RMSE.default_filename">
+<span class="sig-name descname"><span class="pre">default_filename</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'*.pickle'</span></em><a class="headerlink" href="#alien.benchmarks.metrics.RMSE.default_filename" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.benchmarks.metrics.RMSE.load">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.benchmarks.metrics.RMSE.load" title="Permalink to this definition"></a></dt>
+<dd><p>Load a Score object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>file</strong> (<em>str</em>) – File path location.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Score object to load.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#alien.benchmarks.metrics.Score" title="alien.benchmarks.metrics.Score">Score</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.benchmarks.metrics.RMSE.load_many">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load_many</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">scores</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'*.pickle'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span></span></span><a class="headerlink" href="#alien.benchmarks.metrics.RMSE.load_many" title="Permalink to this definition"></a></dt>
+<dd><p>Loads many Scores at once, and returns a list.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>*args</strong> – several filenames, or one filename with wildcards, or
+one folder name (which will have wildcards appended)</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>_description_</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list[<a class="reference internal" href="#alien.benchmarks.metrics.Score" title="alien.benchmarks.metrics.Score">Score</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.benchmarks.metrics.RMSE.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.benchmarks.metrics.RMSE.save" title="Permalink to this definition"></a></dt>
+<dd><p>Save Score object to given filepath.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>file_path</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – Path to save object. Defaults to None.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="alien.benchmarks.metrics.Scatter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">alien.benchmarks.metrics.</span></span><span class="sig-name descname"><span class="pre">Scatter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">errs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/benchmarks/metrics.html#Scatter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.benchmarks.metrics.Scatter" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.benchmarks.metrics.Scatter.compute">
+<span class="sig-name descname"><span class="pre">compute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">get_errs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/benchmarks/metrics.html#Scatter.compute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.benchmarks.metrics.Scatter.compute" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.benchmarks.metrics.Scatter.RMSE">
+<span class="sig-name descname"><span class="pre">RMSE</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/benchmarks/metrics.html#Scatter.RMSE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.benchmarks.metrics.Scatter.RMSE" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.benchmarks.metrics.Scatter.plot">
+<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">show_errors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_diagonal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">block</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/benchmarks/metrics.html#Scatter.plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.benchmarks.metrics.Scatter.plot" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.benchmarks.metrics.Scatter.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/benchmarks/metrics.html#Scatter.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.benchmarks.metrics.Scatter.save" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.benchmarks.metrics.Scatter.load">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/benchmarks/metrics.html#Scatter.load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.benchmarks.metrics.Scatter.load" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="alien.benchmarks.metrics.plot_scores">
+<span class="sig-prename descclassname"><span class="pre">alien.benchmarks.metrics.</span></span><span class="sig-name descname"><span class="pre">plot_scores</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">XY</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xlabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Compounds</span> <span class="pre">/</span> <span class="pre">Number'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ylabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Error</span> <span class="pre">/</span> <span class="pre">RMSE'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_err</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confidence</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.95</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ticks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tight_layout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dpi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">800</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(5,</span> <span class="pre">4)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fontsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">12</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xlim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ylim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xmin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ymin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ymax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">block</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">legend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/benchmarks/metrics.html#plot_scores"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.benchmarks.metrics.plot_scores" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the <code class="xref py py-obj docutils literal notranslate"><span class="pre">matplotlib.axes.Axes</span></code> it is drawing on. You can use this to modify the
+plot after-the-fact.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>xlabel</strong> – Label for x-axis</p></li>
+<li><p><strong>ylabel</strong> – Label for y-axis</p></li>
+<li><p><strong>show_err</strong> – If True, shows error bands when available</p></li>
+<li><p><strong>confidence</strong> – The confidence threshold of the error bands</p></li>
+<li><p><strong>grid</strong> – If True, show a dashed gray grid</p></li>
+<li><p><strong>ticks</strong> – If True, show ticks on the axes</p></li>
+<li><p><strong>tight_layout</strong> – If True, calls matplotlib’s <code class="xref py py-obj docutils literal notranslate"><span class="pre">tight_layout</span></code></p></li>
+<li><p><strong>dpi</strong> – DPI for saved figures</p></li>
+<li><p><strong>figsize</strong> – Size of the figure in matplotlib units</p></li>
+<li><p><strong>fontsize</strong> – Font size for legend, axis labels</p></li>
+<li><p><strong>xlim</strong> – Can be either an order pair <code class="xref py py-obj docutils literal notranslate"><span class="pre">(xmin,</span> <span class="pre">xmax)</span></code>, or a dictionary
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">{'xmin':xmin,</span> <span class="pre">'xmax':xmax}</span></code>. In fact, the dictionary may have any
+subset of the arguments to <code class="xref py py-obj docutils literal notranslate"><span class="pre">matplotlib.axes.Axes.set_xlim</span></code>.</p></li>
+<li><p><strong>ylim</strong> – Like xlim, but with <code class="xref py py-obj docutils literal notranslate"><span class="pre">(ymin,</span> <span class="pre">ymax)</span></code>.</p></li>
+<li><p><strong>ymax</strong> (<em>xmin</em><em>, </em><em>xmax</em><em>, </em><em>ymin</em><em>,</em>) – Alternatively, you can pass plot limits directly
+as kwargs.</p></li>
+<li><p><strong>show</strong> – Whether to call <code class="xref py py-obj docutils literal notranslate"><span class="pre">matplotlib.pyplot.show</span></code></p></li>
+<li><p><strong>block</strong> – Whether the plot display should be blocking. Defaults to True.</p></li>
+<li><p><strong>save</strong> – If <code class="xref py py-obj docutils literal notranslate"><span class="pre">save</span> <span class="pre">==</span> <span class="pre">True</span></code>, or if <code class="xref py py-obj docutils literal notranslate"><span class="pre">file</span></code> is given, saves the figure to a
+file. If <code class="xref py py-obj docutils literal notranslate"><span class="pre">file</span></code> is specified, uses that filename. If <code class="xref py py-obj docutils literal notranslate"><span class="pre">file</span></code> is not specified,
+builds a filename be sanitizing <code class="xref py py-obj docutils literal notranslate"><span class="pre">title</span></code> or <code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code>.</p></li>
+<li><p><strong>file_path</strong> – See above</p></li>
+<li><p><strong>title</strong> – </p></li>
+<li><p><strong>name</strong> – <code class="xref py py-obj docutils literal notranslate"><span class="pre">title</span></code> and <code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code> are synonyms, specifying the plot title</p></li>
+<li><p><strong>legend</strong> – Whether or not to show a legend</p></li>
+<li><p><strong>axes</strong> – You can specify matplotlib axes to plot into</p></li>
+</ul>
+</dd>
+</dl>
+<p>Additional keyword arguments are passed to the <code class="xref py py-obj docutils literal notranslate"><span class="pre">plot</span></code> function.</p>
+<p>Note about titles/filenames: If you just want to give a name for the purpose of
+saving to a unique file, specify <code class="xref py py-obj docutils literal notranslate"><span class="pre">file</span></code>. If you also want to show a title, there’s
+no need to specify <code class="xref py py-obj docutils literal notranslate"><span class="pre">file</span></code>—you can just specify <code class="xref py py-obj docutils literal notranslate"><span class="pre">title</span></code> or <code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code>.</p>
+</dd></dl>
+
+</section>
+<section id="module-alien.benchmarks.oracle">
+<span id="alien-benchmarks-oracle-module"></span><h2>alien.benchmarks.oracle module<a class="headerlink" href="#module-alien.benchmarks.oracle" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="alien.benchmarks.oracle.Oracle">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">alien.benchmarks.oracle.</span></span><span class="sig-name descname"><span class="pre">Oracle</span></span><a class="reference internal" href="_modules/alien/benchmarks/oracle.html#Oracle"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.benchmarks.oracle.Oracle" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.benchmarks.oracle.Oracle.get_label">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_label</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/benchmarks/oracle.html#Oracle.get_label"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.benchmarks.oracle.Oracle.get_label" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.benchmarks.oracle.Oracle.get_labels">
+<span class="sig-name descname"><span class="pre">get_labels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/benchmarks/oracle.html#Oracle.get_labels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.benchmarks.oracle.Oracle.get_labels" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="alien.benchmarks.oracle.SetOracle">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">alien.benchmarks.oracle.</span></span><span class="sig-name descname"><span class="pre">SetOracle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/benchmarks/oracle.html#SetOracle"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.benchmarks.oracle.SetOracle" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="alien.sample_generation.html#alien.sample_generation.from_set.SetSampleGenerator" title="alien.sample_generation.from_set.SetSampleGenerator"><code class="xref py py-class docutils literal notranslate"><span class="pre">SetSampleGenerator</span></code></a>, <a class="reference internal" href="#alien.benchmarks.oracle.Oracle" title="alien.benchmarks.oracle.Oracle"><code class="xref py py-class docutils literal notranslate"><span class="pre">Oracle</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.benchmarks.oracle.SetOracle.get_label">
+<span class="sig-name descname"><span class="pre">get_label</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/benchmarks/oracle.html#SetOracle.get_label"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.benchmarks.oracle.SetOracle.get_label" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.benchmarks.oracle.SetOracle.generate_sample">
+<span class="sig-name descname"><span class="pre">generate_sample</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#alien.benchmarks.oracle.SetOracle.generate_sample" title="Permalink to this definition"></a></dt>
+<dd><p>Generates and returns a single sample</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.benchmarks.oracle.SetOracle.generate_samples">
+<span class="sig-name descname"><span class="pre">generate_samples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">N</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">inf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reshuffle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.benchmarks.oracle.SetOracle.generate_samples" title="Permalink to this definition"></a></dt>
+<dd><p>Generates and returns N samples.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>N</strong> – usually an integer. Different generators
+will interpret N == inf in different ways. It
+will typically return “all” samples, perhaps as
+an iterable.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.benchmarks.oracle.SetOracle.get_labels">
+<span class="sig-name descname"><span class="pre">get_labels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.benchmarks.oracle.SetOracle.get_labels" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="alien.benchmarks.oracle.SetOracle.labels">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">labels</span></span><a class="headerlink" href="#alien.benchmarks.oracle.SetOracle.labels" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.benchmarks.oracle.SetOracle.remove_data_indices">
+<span class="sig-name descname"><span class="pre">remove_data_indices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indices</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.benchmarks.oracle.SetOracle.remove_data_indices" title="Permalink to this definition"></a></dt>
+<dd><p>Remove data indices and shift self.pointer accordingly</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.benchmarks.oracle.SetOracle.remove_sample">
+<span class="sig-name descname"><span class="pre">remove_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.benchmarks.oracle.SetOracle.remove_sample" title="Permalink to this definition"></a></dt>
+<dd><p>Single-sample version of remove_samples</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.benchmarks.oracle.SetOracle.remove_samples">
+<span class="sig-name descname"><span class="pre">remove_samples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">samples</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.benchmarks.oracle.SetOracle.remove_samples" title="Permalink to this definition"></a></dt>
+<dd><p>‘Removes’ or, rather, <em>hides</em> samples from this generator.
+Hidden samples are still stored in self.data, but will not
+appear in any future calls to generate_samples.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.benchmarks.oracle.SetOracle.reshuffle">
+<span class="sig-name descname"><span class="pre">reshuffle</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#alien.benchmarks.oracle.SetOracle.reshuffle" title="Permalink to this definition"></a></dt>
+<dd><p>Reshuffles current indices</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-alien.benchmarks.retrospective">
+<span id="alien-benchmarks-retrospective-module"></span><h2>alien.benchmarks.retrospective module<a class="headerlink" href="#module-alien.benchmarks.retrospective" title="Permalink to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="alien.benchmarks.retrospective.run_experiments">
+<span class="sig-prename descclassname"><span class="pre">alien.benchmarks.retrospective.</span></span><span class="sig-name descname"><span class="pre">run_experiments</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">runs_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite_old_runs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_initial</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">inf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">selector</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">selector_args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fit_args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_runs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ids</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_ids</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">split_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">421</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timestamps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stop_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stop_rmse</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stop_frac</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">peek_score</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_samples_x</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_samples_y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/benchmarks/retrospective.html#run_experiments"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.benchmarks.retrospective.run_experiments" title="Permalink to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>runs_dir</strong> – directory to store the runs and results of this training (each run in
+separate subdirectories)</p></li>
+<li><p><strong>n_initial</strong> – number of samples to randomly select for initial training data</p></li>
+<li><p><strong>batch_size</strong> – number of samples selected for batch</p></li>
+<li><p><strong>num_samples</strong> – number of samples (drawn from the sample pool X) to select from.
+Default is inf, which takes all of the samples available in X.</p></li>
+<li><p><strong>selector</strong> – the selector to use for batch selection, either given
+by one of the strings ‘covariance’, ‘random’, ‘expected improvement’/’ei’, ‘greedy’,
+or passed as an actual SampleSelector instance. Defaults to ‘covariance’.</p></li>
+<li><p><strong>selector_args</strong> – <p>a dictionary passed as kwargs to the selector constructor.
+The following constructor arguments are already automatically included, and don’t
+need to be included in this dictionary:</p>
+<blockquote>
+<div><p>model, labelled_samples, samples, num_samples, batch_size</p>
+</div></blockquote>
+</p></li>
+<li><p><strong>fit_args</strong> – a dictionary passed as kwargs each time model.fit(…) is called.
+Typically, this is model- or framework-specific; so, eg., different arguments would
+be appropriate for pytorch models, DeepChem models, etc.</p></li>
+<li><p><strong>n_runs</strong> – the number of overall runs (each starting from
+a random initial selection) to do (for averaging)</p></li>
+<li><p><strong>random_seed</strong> – random seed for most RNG generation</p></li>
+<li><p><strong>split_seed</strong> – random seed for shuffling and splitting of data</p></li>
+<li><p><strong>test_size</strong> – the size of the test/validation set to take from X,y.
+If test_size &gt;= 1, then takes that many samples. if 0 &lt; test_size &lt; 1, takes
+that fraction of the dataset size.</p></li>
+<li><p><strong>stop_samples</strong> – if this is not None, stops an experiment run when
+this many samples are labelled. Defaults to None</p></li>
+<li><p><strong>stop_rmse</strong> – if this is not None, stops an experiment run when this
+RMSE has been reached. Defaults to None</p></li>
+<li><p><strong>stop_frac</strong> – if this is not None, stops an experiment run when the
+RMSE has moved this fraction of the way from the RMSE after the first
+round to the RMSE trained on the whole dataset. We suggest something like
+.85, if you want to use this feature. Defaults to None</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-alien.benchmarks.uncertainty_metrics">
+<span id="alien-benchmarks-uncertainty-metrics-module"></span><h2>alien.benchmarks.uncertainty_metrics module<a class="headerlink" href="#module-alien.benchmarks.uncertainty_metrics" title="Permalink to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="alien.benchmarks.uncertainty_metrics.KL_divergence">
+<span class="sig-prename descclassname"><span class="pre">alien.benchmarks.uncertainty_metrics.</span></span><span class="sig-name descname"><span class="pre">KL_divergence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">preds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">std_devs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/benchmarks/uncertainty_metrics.html#KL_divergence"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.benchmarks.uncertainty_metrics.KL_divergence" title="Permalink to this definition"></a></dt>
+<dd><p>Computes the KL-divergence from the predicted distribution
+(using preds and std_devs, assuming normal distributions)
+to the ground-truth distribution (all of the probability
+mass on the true y values). In other words, this tells you
+how much information would be gained by learning the true
+values. Averaged over sample points.</p>
+<p>Lower is generally better. Not only does this penalize
+uncertainties which are poorly calibrated (i.e., it
+penalizes uncertainties where the actual error distribution
+has a different standard deviation), but also it penalizes
+uncertainties which are not as specific as they could be,
+i.e., which fail to discriminate between certain and
+uncertain predictions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>preds</strong> – predicted values</p></li>
+<li><p><strong>std_devs</strong> – predicted uncertainties, given as standard
+deviations</p></li>
+<li><p><strong>y</strong> – true values</p></li>
+<li><p><strong>normalize</strong> – if True (the default), normalizes with respect
+to the RMSE</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="alien.benchmarks.uncertainty_metrics.best_multiple">
+<span class="sig-prename descclassname"><span class="pre">alien.benchmarks.uncertainty_metrics.</span></span><span class="sig-name descname"><span class="pre">best_multiple</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">preds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">std_devs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_precision</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/benchmarks/uncertainty_metrics.html#best_multiple"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.benchmarks.uncertainty_metrics.best_multiple" title="Permalink to this definition"></a></dt>
+<dd><p>Does a simple binary search to find which multiple of std_devs gives the
+lowest KL-divergence score. To converge, assumes there is only one local
+minimum. (I expect this to be true, but I will have to check.)</p>
+<p>Arguments preds, std_devs, y and noise are as in KL_divergence, except
+this will compute the KL-divergence for multiples of std_devs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>max_precision</strong> – the number of interval splits the score must be
+adjacent to before returning the value. Defaults to 5.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="alien.benchmarks.uncertainty_metrics.binary_optimize">
+<span class="sig-prename descclassname"><span class="pre">alien.benchmarks.uncertainty_metrics.</span></span><span class="sig-name descname"><span class="pre">binary_optimize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fn</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'max'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_precision</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iterations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/benchmarks/uncertainty_metrics.html#binary_optimize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.benchmarks.uncertainty_metrics.binary_optimize" title="Permalink to this definition"></a></dt>
+<dd><p>Does a simple binary search to find which scalar value gives the best
+(max/min) value of fn. Optimization converges to a local max/min.</p>
+<p>Each search iteration starts with the previously-explored value with the
+best score, and looks on either side of it. If the best score is at the
+beginning of the current list of value, it looks at half this value
+on the low side; if at the end of the list, looks at twice this value
+on the high side. If the best value is somewhere in the middle, it divides
+the interval on either side in half.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>max_precision</strong> – the number of interval splits the score must be
+adjacent to before returning the value. Defaults to 5.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="alien.benchmarks.uncertainty_metrics.search_lower">
+<span class="sig-prename descclassname"><span class="pre">alien.benchmarks.uncertainty_metrics.</span></span><span class="sig-name descname"><span class="pre">search_lower</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vals</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precision</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_precision</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/benchmarks/uncertainty_metrics.html#search_lower"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.benchmarks.uncertainty_metrics.search_lower" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="alien.benchmarks.uncertainty_metrics.search_upper">
+<span class="sig-prename descclassname"><span class="pre">alien.benchmarks.uncertainty_metrics.</span></span><span class="sig-name descname"><span class="pre">search_upper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vals</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precision</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_precision</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/benchmarks/uncertainty_metrics.html#search_upper"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.benchmarks.uncertainty_metrics.search_upper" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="alien.benchmarks.uncertainty_metrics.plot_errors">
+<span class="sig-prename descclassname"><span class="pre">alien.benchmarks.uncertainty_metrics.</span></span><span class="sig-name descname"><span class="pre">plot_errors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">preds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">std_devs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/benchmarks/uncertainty_metrics.html#plot_errors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.benchmarks.uncertainty_metrics.plot_errors" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-alien.benchmarks">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-alien.benchmarks" title="Permalink to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="alien.selection.html" class="btn btn-neutral float-left" title="alien.selection" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="alien.data.html" class="btn btn-neutral float-right" title="alien.data" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

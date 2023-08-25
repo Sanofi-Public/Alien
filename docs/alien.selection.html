@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>alien.selection &mdash; ALIEN 1.1.2 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="alien.benchmarks" href="alien.benchmarks.html" />
+    <link rel="prev" title="alien.models" href="alien.models.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            ALIEN
+          </a>
+              <div class="version">
+                1.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="active_learning.html">What is active learning?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="alien.models.html">alien.models</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">alien.selection</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#sampleselector">SampleSelector</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#alien.selection.SampleSelector"><code class="docutils literal notranslate"><span class="pre">SampleSelector</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#alien.selection.SampleSelector.select"><code class="docutils literal notranslate"><span class="pre">SampleSelector.select()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#covarianceselector">CovarianceSelector</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#alien.selection.CovarianceSelector"><code class="docutils literal notranslate"><span class="pre">CovarianceSelector</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#alien.selection.CovarianceSelector.get_prefilter"><code class="docutils literal notranslate"><span class="pre">CovarianceSelector.get_prefilter()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.selection.CovarianceSelector.model_predict"><code class="docutils literal notranslate"><span class="pre">CovarianceSelector.model_predict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.selection.CovarianceSelector.prediction_prior"><code class="docutils literal notranslate"><span class="pre">CovarianceSelector.prediction_prior()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.selection.CovarianceSelector.select"><code class="docutils literal notranslate"><span class="pre">CovarianceSelector.select()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#baitselector">BAITSelector</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#alien.selection.BAITSelector"><code class="docutils literal notranslate"><span class="pre">BAITSelector</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#alien.selection.BAITSelector.model_predict"><code class="docutils literal notranslate"><span class="pre">BAITSelector.model_predict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.selection.BAITSelector.prediction_prior"><code class="docutils literal notranslate"><span class="pre">BAITSelector.prediction_prior()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.selection.BAITSelector.select"><code class="docutils literal notranslate"><span class="pre">BAITSelector.select()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#kmeansselector">KmeansSelector</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#alien.selection.KmeansSelector"><code class="docutils literal notranslate"><span class="pre">KmeansSelector</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#alien.selection.KmeansSelector.model_predict"><code class="docutils literal notranslate"><span class="pre">KmeansSelector.model_predict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.selection.KmeansSelector.prediction_prior"><code class="docutils literal notranslate"><span class="pre">KmeansSelector.prediction_prior()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.selection.KmeansSelector.select"><code class="docutils literal notranslate"><span class="pre">KmeansSelector.select()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#randomselector">RandomSelector</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#alien.selection.RandomSelector"><code class="docutils literal notranslate"><span class="pre">RandomSelector</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#alien.selection.RandomSelector.model_predict"><code class="docutils literal notranslate"><span class="pre">RandomSelector.model_predict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.selection.RandomSelector.prediction_prior"><code class="docutils literal notranslate"><span class="pre">RandomSelector.prediction_prior()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.selection.RandomSelector.select"><code class="docutils literal notranslate"><span class="pre">RandomSelector.select()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#timestampselector">TimestampSelector</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#alien.selection.TimestampSelector"><code class="docutils literal notranslate"><span class="pre">TimestampSelector</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#alien.selection.TimestampSelector.model_predict"><code class="docutils literal notranslate"><span class="pre">TimestampSelector.model_predict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.selection.TimestampSelector.prediction_prior"><code class="docutils literal notranslate"><span class="pre">TimestampSelector.prediction_prior()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.selection.TimestampSelector.select"><code class="docutils literal notranslate"><span class="pre">TimestampSelector.select()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="alien.benchmarks.html">alien.benchmarks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="alien.data.html">alien.data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="alien.sample_generation.html">alien.sample_generation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">ALIEN</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">alien.selection</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/alien.selection.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="alien-selection">
+<h1>alien.selection<a class="headerlink" href="#alien-selection" title="Permalink to this heading"></a></h1>
+<a class="reference internal image-reference" href="../media/curio_dab.png"><img alt="Curio the alien dabbing on a rainbow" class="align-right" src="../media/curio_dab.png" style="width: 35%;" /></a>
+<span class="target" id="module-alien.selection"></span><p>This module implements a number of batch selection strategies, and provides
+a framework for implementing others. Each strategy is implemented as a
+subclass of <a class="reference internal" href="#alien.selection.SampleSelector" title="alien.selection.SampleSelector"><code class="xref py py-class docutils literal notranslate"><span class="pre">SampleSelector</span></code></a>. The docs for <a class="reference internal" href="#alien.selection.SampleSelector" title="alien.selection.SampleSelector"><code class="xref py py-class docutils literal notranslate"><span class="pre">SampleSelector</span></code></a>
+give a good introduction to the interface.</p>
+<p>A selector object needs at least two things:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>A <a class="reference internal" href="alien.models.html#alien.models.Model" title="alien.models.Model"><code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></a></p></li>
+<li><p>A pool of unlabeled samples to select from. This can be a
+<code class="xref py py-class docutils literal notranslate"><span class="pre">Dataset</span></code>,
+or any sufficiently array-like object. Alternatively, this can be a
+<code class="xref py py-class docutils literal notranslate"><span class="pre">SampleGenerator</span></code>.</p></li>
+</ul>
+</div></blockquote>
+<p>Additionally, some selectors also need</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>The labeled samples the model was trained on.</p></li>
+</ul>
+</div></blockquote>
+<p>Given these, and various hyperparameters and auxiliary data, you can call on
+the selector to select a batch of candidates for labeling, chosen from the
+unlabeled samples.</p>
+<p class="rubric">Example</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">alien.selecion</span> <span class="kn">import</span> <span class="n">CovarianceSelector</span>
+
+<span class="n">selector</span> <span class="o">=</span> <span class="n">CovarianceSelector</span><span class="p">(</span>
+   <span class="n">model</span> <span class="o">=</span> <span class="n">deep_model</span><span class="p">,</span>
+   <span class="n">samples</span> <span class="o">=</span> <span class="n">unlabeled_pool</span><span class="p">,</span>
+   <span class="n">batch_size</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">batch</span> <span class="o">=</span> <span class="n">selector</span><span class="o">.</span><span class="n">select</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>ALIEN has the following selection strategies implemented.</p>
+<ul>
+<li><p><em>Active learning strategies</em> - These are aimed at improving model
+performance as quickly as possible.</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><a class="reference internal" href="#alien.selection.CovarianceSelector" title="alien.selection.CovarianceSelector"><code class="xref py py-class docutils literal notranslate"><span class="pre">CovarianceSelector</span></code></a></p></li>
+<li><p><a class="reference internal" href="#alien.selection.BAITSelector" title="alien.selection.BAITSelector"><code class="xref py py-class docutils literal notranslate"><span class="pre">BAITSelector</span></code></a></p></li>
+<li><p><a class="reference internal" href="#alien.selection.KmeansSelector" title="alien.selection.KmeansSelector"><code class="xref py py-class docutils literal notranslate"><span class="pre">KmeansSelector</span></code></a></p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p><em>Optimization strategies</em> - These are aimed at finding the highest
+scorers as quickly as possible.</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ThompsonSelector</span></code></p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p><em>Baselines</em></p>
+<blockquote>
+<div><ul class="simple">
+<li><p><a class="reference internal" href="#alien.selection.RandomSelector" title="alien.selection.RandomSelector"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomSelector</span></code></a></p></li>
+<li><p><a class="reference internal" href="#alien.selection.TimestampSelector" title="alien.selection.TimestampSelector"><code class="xref py py-class docutils literal notranslate"><span class="pre">TimestampSelector</span></code></a></p></li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+<p>You can write your own strategies! ALIEN’s Selector architecture is designed
+to make it as simple as possible for you to implement other selection
+strategies. <em>Documentation coming soon!</em></p>
+<section id="sampleselector">
+<h2>SampleSelector<a class="headerlink" href="#sampleselector" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="alien.selection.SampleSelector">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">alien.selection.</span></span><span class="sig-name descname"><span class="pre">SampleSelector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labelled_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'X'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_indices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/selection/selector.html#SampleSelector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.selection.SampleSelector" title="Permalink to this definition"></a></dt>
+<dd><p>Abstract base class for selection strategies</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – An instance of models.RegressionModel. Will be used to determine
+prediction covariances for proposed batches.</p></li>
+<li><p><strong>samples</strong> – The sample pool to select from. Can be a numpy-style addressable
+array (with first dimension indexing samples, and other dimensions indexing
+features)—note that <code class="xref py py-class docutils literal notranslate"><span class="pre">alien.data.Dataset</span></code> serves this purpose—or an instance of
+<code class="xref py py-class docutils literal notranslate"><span class="pre">sample_generation.SampleGenerator</span></code>, in which case the num_samples
+parameter is in effect.</p></li>
+<li><p><strong>num_samples</strong> – If a <code class="xref py py-obj docutils literal notranslate"><span class="pre">SampleGenerator</span></code> has been provided via the ‘samples’
+parameter, then at the start of a call to <a class="reference internal" href="#alien.selection.SampleSelector.select" title="alien.selection.SampleSelector.select"><code class="xref py py-meth docutils literal notranslate"><span class="pre">select()</span></code></a>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">num_samples</span></code>
+samples will be drawn from the <code class="xref py py-obj docutils literal notranslate"><span class="pre">SampleGenerator</span></code>, or as many samples as the
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">SampleGenerator</span></code> can provide, whichever is less. Defaults to Inf, i.e., draws
+as many samples as available.</p></li>
+<li><p><strong>labelled_samples</strong> – Some selection strategies need to know the previously-labelled
+samples.</p></li>
+<li><p><strong>batch_size</strong> – Size of the batch to select.</p></li>
+<li><p><strong>prior</strong> – <p>Specifies a “prior probability” for each sample. Each selector
+may use this prior as it sees fit, but generally, samples with low
+prior are de-emphasized in the selection process. This is a covenient way of
+introducing factors other than uncertainty into the ranking. <code class="xref py py-obj docutils literal notranslate"><span class="pre">prior</span></code> may be an
+array of numbers
+(of size num_samples), or a function (applied to the samples), or one of the
+following:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>’prediction’: calculates a prior from the quantile of the predicted</dt><dd><p>performance (not the uncertainties). <code class="xref py py-obj docutils literal notranslate"><span class="pre">prior_scale</span></code> sets the power
+this quantile is raised to.</p>
+</dd>
+</dl>
+</div></blockquote>
+<p>Defaults to the constant value 1.</p>
+</p></li>
+<li><p><strong>prior_scale</strong> – The prior will be raised to this power before applying it to
+the samples. Defaults to 1.</p></li>
+<li><p><strong>prefilter</strong> – <p>Reduces the incoming sample pool before applying batch
+selection. If <code class="xref py py-obj docutils literal notranslate"><span class="pre">a</span></code> is the single-sample acquisition function, then
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">prefilter</span> <span class="pre">=</span> <span class="pre">True</span></code> selects a subset of the provided samples maximizing
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">a</span></code></p>
+<p>If 0 &lt; prefilter &lt; 1, takes this fraction of the
+sample pool. If prefilter &gt;= 1, takes this many samples.</p>
+<p>Some of the selectors are limited in how many samples they can consider
+for the final, batch-selection problem. For example, <a class="reference internal" href="#alien.selection.CovarianceSelector" title="alien.selection.CovarianceSelector"><code class="xref py py-class docutils literal notranslate"><span class="pre">CovarianceSelector</span></code></a>
+computes and stores the size-N^2 covariance matrix for the whole
+sample pool; therefore, because of memory constraints it should work with
+at most around 10,000 samples.</p>
+<p>In such cases, there is often a cheaper prefiltering operation available.
+Eg., <a class="reference internal" href="#alien.selection.CovarianceSelector" title="alien.selection.CovarianceSelector"><code class="xref py py-class docutils literal notranslate"><span class="pre">CovarianceSelector</span></code></a> prefilters only with the variance, rather
+than the full covariance.</p>
+<p>A practical strategy in such cases is to take a sample pool about
+5 times as big as the selector can handle for the final computation, then
+narrow down to only the top 20% individual scores before batch selection.
+Narrowing to much less than 20% risks reducing diversity too much and
+changing what would ultimately be the selected batch.</p>
+</p></li>
+<li><p><strong>random_seed</strong> – A random seed for deterministic behaviour.</p></li>
+<li><p><strong>return_indices</strong> – If True, <a class="reference internal" href="#alien.selection.SampleSelector.select" title="alien.selection.SampleSelector.select"><code class="xref py py-meth docutils literal notranslate"><span class="pre">select()</span></code></a> will return the indices of
+the selection (from within the given sample pool). If False,
+<a class="reference internal" href="#alien.selection.SampleSelector.select" title="alien.selection.SampleSelector.select"><code class="xref py py-meth docutils literal notranslate"><span class="pre">select()</span></code></a> will return the actual selected samples. Defaults to <code class="xref py py-obj docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.selection.SampleSelector.select">
+<span class="sig-name descname"><span class="pre">select</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fixed_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fixed_prior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_indices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tail_call</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/selection/selector.html#SampleSelector.select"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.selection.SampleSelector.select" title="Permalink to this definition"></a></dt>
+<dd><p>Selects a batch from the provided samples, and returns it (or its
+indices).</p>
+<p>All of the arguments to <a class="reference internal" href="#alien.selection.SampleSelector.select" title="alien.selection.SampleSelector.select"><code class="xref py py-meth docutils literal notranslate"><span class="pre">select()</span></code></a> are optional. If you have provided
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">samples</span></code> and other necessary parameters to the constructor already,
+then you may omit them here.</p>
+<p>However, some parameters here are <em>not</em> in the constructor: <code class="xref py py-obj docutils literal notranslate"><span class="pre">fixed_samples</span></code> and
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">fixed_prior</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>batch_size</strong> (<em>int</em><em>, </em><em>optional</em>) – The size of the batch to select.</p></li>
+<li><p><strong>samples</strong> (<em>ArrayLike</em><em>, </em><em>optional</em>) – The sample pool to select from. Can be a numpy-style addressable
+array (with first dimension indexing samples, and other dimensions indexing
+features)—note that <code class="xref py py-class docutils literal notranslate"><span class="pre">alien.data.Dataset</span></code> serves this purpose—or an instance of
+<code class="xref py py-class docutils literal notranslate"><span class="pre">sample_generation.SampleGenerator</span></code>, in which case the num_samples
+parameter isnin effect.</p></li>
+<li><p><strong>num_samples</strong> – If a <code class="xref py py-obj docutils literal notranslate"><span class="pre">SampleGenerator</span></code> has been provided via the ‘samples’
+parameter, then at the start of a call to <a class="reference internal" href="#alien.selection.SampleSelector.select" title="alien.selection.SampleSelector.select"><code class="xref py py-meth docutils literal notranslate"><span class="pre">select()</span></code></a>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">num_samples</span></code>
+samples will be drawn from the <code class="xref py py-obj docutils literal notranslate"><span class="pre">SampleGenerator</span></code>, or as many samples as the
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">SampleGenerator</span></code> can provide, whichever is less. Defaults to Inf, i.e., draws
+as many samples as available.</p></li>
+<li><p><strong>prior</strong> – A “prior probability” for each sample. May be an array of numbers, a function,
+or the string <code class="xref py py-obj docutils literal notranslate"><span class="pre">'prediction'</span></code>. A more detailed explanation is above,
+in the class definition. Defaults to the constant value 1.</p></li>
+<li><p><strong>prior_scale</strong> – The prior will be raised to this power before applying it to
+the samples. Defaults to 1.</p></li>
+<li><p><strong>prefilter</strong> – Reduces the incoming sample pool before applying batch
+selection. If 0 &lt; prefilter &lt; 1, we use this fraction of the
+sample pool. If prefilter &gt;= 1, we use this many samples. A more detailed explanation
+if above, in the class definition.</p></li>
+<li><p><strong>return_indices</strong> – If True, <a class="reference internal" href="#alien.selection.SampleSelector.select" title="alien.selection.SampleSelector.select"><code class="xref py py-meth docutils literal notranslate"><span class="pre">select()</span></code></a> will return the indices of
+the selection (from within the given sample pool). If False,
+<a class="reference internal" href="#alien.selection.SampleSelector.select" title="alien.selection.SampleSelector.select"><code class="xref py py-meth docutils literal notranslate"><span class="pre">select()</span></code></a> will return the actual selected samples. Defaults to <code class="xref py py-obj docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><strong>X_key</strong> – The key used to extract the X values from <code class="xref py py-obj docutils literal notranslate"><span class="pre">samples</span></code>. I.e.,
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">X</span> <span class="pre">=</span> <span class="pre">samples[X_key]</span></code>. This is only in effect if you pass an
+explicit value to <code class="xref py py-obj docutils literal notranslate"><span class="pre">X_key</span></code>, or if <code class="xref py py-obj docutils literal notranslate"><span class="pre">samples</span></code> is a <code class="xref py py-class docutils literal notranslate"><span class="pre">DictDatabase</span></code>
+with key <code class="xref py py-obj docutils literal notranslate"><span class="pre">'X'</span></code>. By default, <code class="xref py py-obj docutils literal notranslate"><span class="pre">X</span> <span class="pre">=</span> <span class="pre">samples</span></code>.</p></li>
+<li><p><strong>fixed_samples</strong> (<em>ArrayLike</em><em>, </em><em>optional</em>) – This parameter is for passing in those samples which have been
+previously selected for labeling, but which haven’t been labeled yet.
+(Eg., you’ve previously sent off a batch to the laboratory pipeline for
+testing, but you need to select the next batch for the pipeline before
+the results are in.)
+Some selection strategies (eg., <a class="reference internal" href="#alien.selection.CovarianceSelector" title="alien.selection.CovarianceSelector"><code class="xref py py-class docutils literal notranslate"><span class="pre">CovarianceSelector</span></code></a> and
+<a class="reference internal" href="#alien.selection.BAITSelector" title="alien.selection.BAITSelector"><code class="xref py py-class docutils literal notranslate"><span class="pre">BAITSelector</span></code></a>) will use this information to avoid redundancy
+between the newly selected batch and the <code class="xref py py-obj docutils literal notranslate"><span class="pre">fixed_samples</span></code>.</p></li>
+<li><p><strong>fixed_prior</strong> – If you provide an explicit (i.e., array-like) prior for <code class="xref py py-obj docutils literal notranslate"><span class="pre">samples</span></code>, then
+you must also provide a prior for <code class="xref py py-obj docutils literal notranslate"><span class="pre">fixed_samples</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The selected batch, either as a sub-array of <code class="xref py py-obj docutils literal notranslate"><span class="pre">samples</span></code>, or as an array of
+indices into <code class="xref py py-obj docutils literal notranslate"><span class="pre">samples</span></code> (if <code class="xref py py-obj docutils literal notranslate"><span class="pre">return_indices</span></code> is set to True).</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="covarianceselector">
+<h2>CovarianceSelector<a class="headerlink" href="#covarianceselector" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="alien.selection.CovarianceSelector">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">alien.selection.</span></span><span class="sig-name descname"><span class="pre">CovarianceSelector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">inf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize_epsilon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regularization</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">similarity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">similarity_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'auto'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefilter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fast_opt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_rounds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/selection/covariance.html#CovarianceSelector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.selection.CovarianceSelector" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">UncertaintySelector</span></code></p>
+<p>Batch selector which looks for batches with large total covariance, i.e., large
+joint entropy.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – An instance of <code class="xref py py-class docutils literal notranslate"><span class="pre">models.CovarianceRegressor</span></code>. Will be used to
+determine prediction covariances for proposed batches.</p></li>
+<li><p><strong>samples</strong> – The sample pool to select from. Can be a numpy-style addressable
+array (with first dimension indexing samples, and other dimensions indexing
+features)—note that <code class="xref py py-class docutils literal notranslate"><span class="pre">data.Dataset</span></code> serves this purpose—or an instance of
+<code class="xref py py-class docutils literal notranslate"><span class="pre">sample_generation.SampleGenerator</span></code>, in which case the <code class="xref py py-obj docutils literal notranslate"><span class="pre">num_samples</span></code> parameter is
+in effect.</p></li>
+<li><p><strong>num_samples</strong> – If a <code class="xref py py-class docutils literal notranslate"><span class="pre">SampleGenerator</span></code> has been provided via the <code class="xref py py-obj docutils literal notranslate"><span class="pre">samples</span></code>
+parameter, then at the start of a call to <a class="reference internal" href="#alien.selection.CovarianceSelector.select" title="alien.selection.CovarianceSelector.select"><code class="xref py py-meth docutils literal notranslate"><span class="pre">select()</span></code></a>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">num_samples</span></code>
+samples will be drawn from the <code class="xref py py-obj docutils literal notranslate"><span class="pre">SampleGenerator</span></code>, or as many samples as the
+<code class="xref py py-class docutils literal notranslate"><span class="pre">SampleGenerator</span></code> can provide, whichever is less. Defaults to :Inf:, i.e., draws
+as many samples as available.</p></li>
+<li><p><strong>batch_size</strong> – Size of the batch to select.</p></li>
+<li><p><strong>regularization</strong> – <p>The diagonal of the covariance matrix will be multiplied by
+(1 + regularization), after being computed by the model. This ensures that
+the coviarance matrix is positive definite (as long as all the covariances
+are positive). Defaults to .05</p>
+<p>This parameter is particularly important if the covariance is computed from
+an ensemble of models, and the ensemble is not very large: for a given batch
+of N samples, and a model ensemble size of M, the distribution of predictions
+will consist of M points in an N-dimensional space. If M &lt; N, the covariance
+of the batch predictions is sure to have determinant 0, and no comparisons
+can be made (without regularization). Even if M &gt;= N, a relatively small
+ensemble size can produce numerical instability in the covariances, which
+regularization smooths out.</p>
+</p></li>
+<li><p><strong>normalize</strong> – <p>If True, scales the (co)variances by the inverse-square-length
+of the embedding vector (retrieved by a call to <code class="xref py py-obj docutils literal notranslate"><span class="pre">model.embedding</span></code>), modulo a
+small constant. This prevents the algorithm from just seeking out those inputs
+which give large embedding vectors. Defaults to False.</p>
+<p>If the model has not implemented an <code class="xref py py-obj docutils literal notranslate"><span class="pre">embedding</span></code> method, setting
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">normalize</span> <span class="pre">=</span> <span class="pre">True</span></code> will raise a <code class="xref py py-obj docutils literal notranslate"><span class="pre">NotImplementedError</span></code> when you call
+<a class="reference internal" href="#alien.selection.CovarianceSelector.select" title="alien.selection.CovarianceSelector.select"><code class="xref py py-meth docutils literal notranslate"><span class="pre">select()</span></code></a>. <code class="xref py py-class docutils literal notranslate"><span class="pre">LaplaceApproxRegressor</span></code> and subclasses have implemented
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">embedding()</span></code>, as have some others.</p>
+</p></li>
+<li><p><strong>normalize_epsilon</strong> – <p>In the normalization step described above, variances are
+divided by <a href="#id1"><span class="problematic" id="id2">|</span></a>embedding_length|² + ε, where</p>
+<blockquote>
+<div><p>ε = normalize_epsilon * MEAN_SQUARE(all embedding lengths)</p>
+</div></blockquote>
+<p>Defaults to 1e-3. Should be related to measurement error.</p>
+</p></li>
+<li><p><strong>similarity</strong> – The effective covariance matrix (before regularization) will be
+(1 - similarity) * covariance (computed from the model) + similarity * S,
+where S is a “synthetic” covariance computed from a similarity matrix, as
+follows:
+First, a similarity matrix is computed: each feature dimension in the data, X,
+will be normalized to have variance of 1. Then, a euclidean distance matrix is
+computed for the whole dataset (divided by sqrt(N), where N is the number of
+feature dimensions). Then, this distance metric is passed into a decaying
+exponential, with 1/e-life equal to the parameter ‘similarity_scale’. This
+gives a positive-definite similarity matrix, with ones on the diagonal.
+Second, the similarity matrix is interpreted as a correlation matrix.
+Variances are taken from the model (i.e., copied from the diagonal of the
+covariance matrix). Together, these data determine a covariance matrix, which
+will be combined with the model covariance in the given proportion.
+Defaults to 0.</p></li>
+<li><p><strong>similarity_scale</strong> – This tunes the correlation matrix in the similarity
+computation above. The pairwise euclidean distances in normalized feature
+space are passed into a exponential with 1/e-life equal to similarity_scale.
+So, a smaller value for similarity_scale will give smaller off-diagonal
+entries on the correlation/covariance matrix.
+If similarity_scale is set to ‘auto’, then a scale is chosen to match the
+mean squares of the similarities and the correlations (from the model).</p></li>
+<li><p><strong>prior</strong> – <p>Specifies a “prior probability” for each sample. The covariance
+matrix (after the application of similarity) will be multiplied by the priors
+such that, if C_ij is a covariance and p_i, p_j are the corresponding priors,
+C’_ij = C_ij p_i p_j. This is a covenient way of introducing factors
+other than covariance into the ranking. ‘prior’ may be an array of numbers
+(of size num_samples), or a function (applied to the samples), or one of the
+following:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>’prediction’: calculates a prior from the quantile of the predicted</dt><dd><p>performance (not the uncertainties). ‘prior_scale’ sets the power
+this quantile is raised to.</p>
+</dd>
+</dl>
+</div></blockquote>
+<p>Defaults to the constant value 1.</p>
+</p></li>
+<li><p><strong>prior_scale</strong> – The prior will be raised to this power before applying it to
+the covariance. Defaults to 1.</p></li>
+<li><p><strong>prefilter</strong> – Reduces the incoming sample pool before applying batch
+selection. Selects the subset of the samples which have the highest
+std_dev * prior score. If 0 &lt; prefilter &lt; 1, takes this fraction of the
+sample pool. If prefilter &gt;= 1, takes this many samples. Since batch
+selection computes and stores the size-N^2 covariance matrix for the whole
+sample pool, it should work with at most around 10,000 samples. Prefiltering
+can work with much larger pools, since it only needs to compute N standard
+deviations. Therefore, a practical strategy is to take a sample pool about
+5 times as big as you can handle covariances for, then narrow down to only
+the top 20% individual scores before batch selection. Narrowing to much less
+than 20% risks changing what will ultimately be the optimal batch.</p></li>
+<li><p><strong>random_seed</strong> – A random seed for deterministic behaviour.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.selection.CovarianceSelector.get_prefilter">
+<span class="sig-name descname"><span class="pre">get_prefilter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">score</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_indices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.selection.CovarianceSelector.get_prefilter" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.selection.CovarianceSelector.model_predict">
+<span class="sig-name descname"><span class="pre">model_predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_std_dev</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.selection.CovarianceSelector.model_predict" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.selection.CovarianceSelector.prediction_prior">
+<span class="sig-name descname"><span class="pre">prediction_prior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">samples</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.selection.CovarianceSelector.prediction_prior" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.selection.CovarianceSelector.select">
+<span class="sig-name descname"><span class="pre">select</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.selection.CovarianceSelector.select" title="Permalink to this definition"></a></dt>
+<dd><p>Selects a batch from the provided samples, and returns it (or its
+indices).</p>
+<p>All of the arguments to <a class="reference internal" href="#alien.selection.CovarianceSelector.select" title="alien.selection.CovarianceSelector.select"><code class="xref py py-meth docutils literal notranslate"><span class="pre">select()</span></code></a> are optional. If you have provided
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">samples</span></code> and other necessary parameters to the constructor already,
+then you may omit them here.</p>
+<p>However, some parameters here are <em>not</em> in the constructor: <code class="xref py py-obj docutils literal notranslate"><span class="pre">fixed_samples</span></code> and
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">fixed_prior</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>batch_size</strong> (<em>int</em><em>, </em><em>optional</em>) – The size of the batch to select.</p></li>
+<li><p><strong>samples</strong> (<em>ArrayLike</em><em>, </em><em>optional</em>) – The sample pool to select from. Can be a numpy-style addressable
+array (with first dimension indexing samples, and other dimensions indexing
+features)—note that <code class="xref py py-class docutils literal notranslate"><span class="pre">alien.data.Dataset</span></code> serves this purpose—or an instance of
+<code class="xref py py-class docutils literal notranslate"><span class="pre">sample_generation.SampleGenerator</span></code>, in which case the num_samples
+parameter isnin effect.</p></li>
+<li><p><strong>num_samples</strong> – If a <code class="xref py py-obj docutils literal notranslate"><span class="pre">SampleGenerator</span></code> has been provided via the ‘samples’
+parameter, then at the start of a call to <a class="reference internal" href="#alien.selection.CovarianceSelector.select" title="alien.selection.CovarianceSelector.select"><code class="xref py py-meth docutils literal notranslate"><span class="pre">select()</span></code></a>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">num_samples</span></code>
+samples will be drawn from the <code class="xref py py-obj docutils literal notranslate"><span class="pre">SampleGenerator</span></code>, or as many samples as the
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">SampleGenerator</span></code> can provide, whichever is less. Defaults to Inf, i.e., draws
+as many samples as available.</p></li>
+<li><p><strong>prior</strong> – A “prior probability” for each sample. May be an array of numbers, a function,
+or the string <code class="xref py py-obj docutils literal notranslate"><span class="pre">'prediction'</span></code>. A more detailed explanation is above,
+in the class definition. Defaults to the constant value 1.</p></li>
+<li><p><strong>prior_scale</strong> – The prior will be raised to this power before applying it to
+the samples. Defaults to 1.</p></li>
+<li><p><strong>prefilter</strong> – Reduces the incoming sample pool before applying batch
+selection. If 0 &lt; prefilter &lt; 1, we use this fraction of the
+sample pool. If prefilter &gt;= 1, we use this many samples. A more detailed explanation
+if above, in the class definition.</p></li>
+<li><p><strong>return_indices</strong> – If True, <a class="reference internal" href="#alien.selection.CovarianceSelector.select" title="alien.selection.CovarianceSelector.select"><code class="xref py py-meth docutils literal notranslate"><span class="pre">select()</span></code></a> will return the indices of
+the selection (from within the given sample pool). If False,
+<a class="reference internal" href="#alien.selection.CovarianceSelector.select" title="alien.selection.CovarianceSelector.select"><code class="xref py py-meth docutils literal notranslate"><span class="pre">select()</span></code></a> will return the actual selected samples. Defaults to <code class="xref py py-obj docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><strong>X_key</strong> – The key used to extract the X values from <code class="xref py py-obj docutils literal notranslate"><span class="pre">samples</span></code>. I.e.,
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">X</span> <span class="pre">=</span> <span class="pre">samples[X_key]</span></code>. This is only in effect if you pass an
+explicit value to <code class="xref py py-obj docutils literal notranslate"><span class="pre">X_key</span></code>, or if <code class="xref py py-obj docutils literal notranslate"><span class="pre">samples</span></code> is a <code class="xref py py-class docutils literal notranslate"><span class="pre">DictDatabase</span></code>
+with key <code class="xref py py-obj docutils literal notranslate"><span class="pre">'X'</span></code>. By default, <code class="xref py py-obj docutils literal notranslate"><span class="pre">X</span> <span class="pre">=</span> <span class="pre">samples</span></code>.</p></li>
+<li><p><strong>fixed_samples</strong> (<em>ArrayLike</em><em>, </em><em>optional</em>) – This parameter is for passing in those samples which have been
+previously selected for labeling, but which haven’t been labeled yet.
+(Eg., you’ve previously sent off a batch to the laboratory pipeline for
+testing, but you need to select the next batch for the pipeline before
+the results are in.)
+Some selection strategies (eg., <a class="reference internal" href="#alien.selection.CovarianceSelector" title="alien.selection.CovarianceSelector"><code class="xref py py-class docutils literal notranslate"><span class="pre">CovarianceSelector</span></code></a> and
+<a class="reference internal" href="#alien.selection.BAITSelector" title="alien.selection.BAITSelector"><code class="xref py py-class docutils literal notranslate"><span class="pre">BAITSelector</span></code></a>) will use this information to avoid redundancy
+between the newly selected batch and the <code class="xref py py-obj docutils literal notranslate"><span class="pre">fixed_samples</span></code>.</p></li>
+<li><p><strong>fixed_prior</strong> – If you provide an explicit (i.e., array-like) prior for <code class="xref py py-obj docutils literal notranslate"><span class="pre">samples</span></code>, then
+you must also provide a prior for <code class="xref py py-obj docutils literal notranslate"><span class="pre">fixed_samples</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The selected batch, either as a sub-array of <code class="xref py py-obj docutils literal notranslate"><span class="pre">samples</span></code>, or as an array of
+indices into <code class="xref py py-obj docutils literal notranslate"><span class="pre">samples</span></code> (if <code class="xref py py-obj docutils literal notranslate"><span class="pre">return_indices</span></code> is set to True).</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="baitselector">
+<h2>BAITSelector<a class="headerlink" href="#baitselector" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="alien.selection.BAITSelector">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">alien.selection.</span></span><span class="sig-name descname"><span class="pre">BAITSelector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">oversample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/selection/bait.html#BAITSelector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.selection.BAITSelector" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#alien.selection.SampleSelector" title="alien.selection.selector.SampleSelector"><code class="xref py py-class docutils literal notranslate"><span class="pre">SampleSelector</span></code></a></p>
+<p>Batch selector following the BAIT strategy. See ` &lt;<a class="reference external" href="https://arxiv.org/abs/2106.09675">https://arxiv.org/abs/2106.09675</a>&gt;`_.
+This strategy optimizes the trace of the Fisher matrix between the outputs
+and the last layer of parameters. This is a measure of the mutual information between
+the unknown labels and the parameters.</p>
+<p>BAIT optimizes the trace of the Fisher for the “batch” consisting of all previously
+labelled samples plus the unlabelled candidate samples. This means that BAITSelector
+needs to know the previously labelled samples. They can be passed into either <code class="xref py py-meth docutils literal notranslate"><span class="pre">__init__()</span></code>
+or <a class="reference internal" href="#alien.selection.BAITSelector.select" title="alien.selection.BAITSelector.select"><code class="xref py py-meth docutils literal notranslate"><span class="pre">select()</span></code></a>, as <code class="xref py py-obj docutils literal notranslate"><span class="pre">labelelled_samples</span></code>. (This class will try to determine whether
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">labelled_samples</span></code> needs to be unpacked into separate X and y columns—only the X
+column is needed.)</p>
+<p>There are two hyperparameters, <code class="xref py py-obj docutils literal notranslate"><span class="pre">gamma</span></code> and <code class="xref py py-obj docutils literal notranslate"><span class="pre">oversample</span></code>, described below.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – An instance of models.LinearizableRegressor, or a model which
+implements the <code class="xref py py-obj docutils literal notranslate"><span class="pre">embedding</span></code> method.</p></li>
+<li><p><strong>samples</strong> – The sample pool to select from. Can be a numpy-style addressable
+array (with first dimension indexing samples, and other dimensions indexing
+features)—note that alien.data.Dataset serves this purpose—or an instance of
+sample_generation.SampleGenerator, in which case the num_samples parameter is
+in effect.</p></li>
+<li><p><strong>num_samples</strong> – If a <code class="xref py py-obj docutils literal notranslate"><span class="pre">SampleGenerator</span></code> has been provided via the ‘samples’
+parameter, then at the start of a call to self.select(…), <code class="xref py py-obj docutils literal notranslate"><span class="pre">num_samples</span></code>
+samples will be drawn from the <code class="xref py py-obj docutils literal notranslate"><span class="pre">SampleGenerator</span></code>, or as many samples as the
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">SampleGenerator</span></code> can provide, whichever is less. Defaults to Inf, i.e., draws
+as many samples as available.</p></li>
+<li><p><strong>labelelled_samples</strong> – The samples which have already been labelled (or are in the
+process of being labelled). This class will try to determine whether
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">labelled_samples</span></code> needs to be unpacked into separate X and y columns—only the X
+column is needed.</p></li>
+<li><p><strong>batch_size</strong> – Size of the batch to select.</p></li>
+<li><p><strong>random_seed</strong> – A random seed for deterministic behaviour.</p></li>
+<li><p><strong>gamma</strong> – The ‘regularization’ parameter in the BAIT algorithm. A larger value
+corresponds to narrower priors. Defaults to 1, which works well enough.</p></li>
+<li><p><strong>oversample</strong> – The factor by which to oversample in the greedy acquisition step.
+BAIT will greedily draw a batch of <code class="xref py py-obj docutils literal notranslate"><span class="pre">oversample</span> <span class="pre">*</span> <span class="pre">batch_size</span></code> samples, then
+greedily remove all but <code class="xref py py-obj docutils literal notranslate"><span class="pre">batch_size</span></code> of them. Defaults to 2, which is empirically
+good.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.selection.BAITSelector.model_predict">
+<span class="sig-name descname"><span class="pre">model_predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_std_dev</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.selection.BAITSelector.model_predict" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.selection.BAITSelector.prediction_prior">
+<span class="sig-name descname"><span class="pre">prediction_prior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">samples</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.selection.BAITSelector.prediction_prior" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.selection.BAITSelector.select">
+<span class="sig-name descname"><span class="pre">select</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fixed_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fixed_prior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_indices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tail_call</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.selection.BAITSelector.select" title="Permalink to this definition"></a></dt>
+<dd><p>Selects a batch from the provided samples, and returns it (or its
+indices).</p>
+<p>All of the arguments to <a class="reference internal" href="#alien.selection.BAITSelector.select" title="alien.selection.BAITSelector.select"><code class="xref py py-meth docutils literal notranslate"><span class="pre">select()</span></code></a> are optional. If you have provided
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">samples</span></code> and other necessary parameters to the constructor already,
+then you may omit them here.</p>
+<p>However, some parameters here are <em>not</em> in the constructor: <code class="xref py py-obj docutils literal notranslate"><span class="pre">fixed_samples</span></code> and
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">fixed_prior</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>batch_size</strong> (<em>int</em><em>, </em><em>optional</em>) – The size of the batch to select.</p></li>
+<li><p><strong>samples</strong> (<em>ArrayLike</em><em>, </em><em>optional</em>) – The sample pool to select from. Can be a numpy-style addressable
+array (with first dimension indexing samples, and other dimensions indexing
+features)—note that <code class="xref py py-class docutils literal notranslate"><span class="pre">alien.data.Dataset</span></code> serves this purpose—or an instance of
+<code class="xref py py-class docutils literal notranslate"><span class="pre">sample_generation.SampleGenerator</span></code>, in which case the num_samples
+parameter isnin effect.</p></li>
+<li><p><strong>num_samples</strong> – If a <code class="xref py py-obj docutils literal notranslate"><span class="pre">SampleGenerator</span></code> has been provided via the ‘samples’
+parameter, then at the start of a call to <a class="reference internal" href="#alien.selection.BAITSelector.select" title="alien.selection.BAITSelector.select"><code class="xref py py-meth docutils literal notranslate"><span class="pre">select()</span></code></a>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">num_samples</span></code>
+samples will be drawn from the <code class="xref py py-obj docutils literal notranslate"><span class="pre">SampleGenerator</span></code>, or as many samples as the
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">SampleGenerator</span></code> can provide, whichever is less. Defaults to Inf, i.e., draws
+as many samples as available.</p></li>
+<li><p><strong>prior</strong> – A “prior probability” for each sample. May be an array of numbers, a function,
+or the string <code class="xref py py-obj docutils literal notranslate"><span class="pre">'prediction'</span></code>. A more detailed explanation is above,
+in the class definition. Defaults to the constant value 1.</p></li>
+<li><p><strong>prior_scale</strong> – The prior will be raised to this power before applying it to
+the samples. Defaults to 1.</p></li>
+<li><p><strong>prefilter</strong> – Reduces the incoming sample pool before applying batch
+selection. If 0 &lt; prefilter &lt; 1, we use this fraction of the
+sample pool. If prefilter &gt;= 1, we use this many samples. A more detailed explanation
+if above, in the class definition.</p></li>
+<li><p><strong>return_indices</strong> – If True, <a class="reference internal" href="#alien.selection.BAITSelector.select" title="alien.selection.BAITSelector.select"><code class="xref py py-meth docutils literal notranslate"><span class="pre">select()</span></code></a> will return the indices of
+the selection (from within the given sample pool). If False,
+<a class="reference internal" href="#alien.selection.BAITSelector.select" title="alien.selection.BAITSelector.select"><code class="xref py py-meth docutils literal notranslate"><span class="pre">select()</span></code></a> will return the actual selected samples. Defaults to <code class="xref py py-obj docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><strong>X_key</strong> – The key used to extract the X values from <code class="xref py py-obj docutils literal notranslate"><span class="pre">samples</span></code>. I.e.,
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">X</span> <span class="pre">=</span> <span class="pre">samples[X_key]</span></code>. This is only in effect if you pass an
+explicit value to <code class="xref py py-obj docutils literal notranslate"><span class="pre">X_key</span></code>, or if <code class="xref py py-obj docutils literal notranslate"><span class="pre">samples</span></code> is a <code class="xref py py-class docutils literal notranslate"><span class="pre">DictDatabase</span></code>
+with key <code class="xref py py-obj docutils literal notranslate"><span class="pre">'X'</span></code>. By default, <code class="xref py py-obj docutils literal notranslate"><span class="pre">X</span> <span class="pre">=</span> <span class="pre">samples</span></code>.</p></li>
+<li><p><strong>fixed_samples</strong> (<em>ArrayLike</em><em>, </em><em>optional</em>) – This parameter is for passing in those samples which have been
+previously selected for labeling, but which haven’t been labeled yet.
+(Eg., you’ve previously sent off a batch to the laboratory pipeline for
+testing, but you need to select the next batch for the pipeline before
+the results are in.)
+Some selection strategies (eg., <a class="reference internal" href="#alien.selection.CovarianceSelector" title="alien.selection.CovarianceSelector"><code class="xref py py-class docutils literal notranslate"><span class="pre">CovarianceSelector</span></code></a> and
+<a class="reference internal" href="#alien.selection.BAITSelector" title="alien.selection.BAITSelector"><code class="xref py py-class docutils literal notranslate"><span class="pre">BAITSelector</span></code></a>) will use this information to avoid redundancy
+between the newly selected batch and the <code class="xref py py-obj docutils literal notranslate"><span class="pre">fixed_samples</span></code>.</p></li>
+<li><p><strong>fixed_prior</strong> – If you provide an explicit (i.e., array-like) prior for <code class="xref py py-obj docutils literal notranslate"><span class="pre">samples</span></code>, then
+you must also provide a prior for <code class="xref py py-obj docutils literal notranslate"><span class="pre">fixed_samples</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The selected batch, either as a sub-array of <code class="xref py py-obj docutils literal notranslate"><span class="pre">samples</span></code>, or as an array of
+indices into <code class="xref py py-obj docutils literal notranslate"><span class="pre">samples</span></code> (if <code class="xref py py-obj docutils literal notranslate"><span class="pre">return_indices</span></code> is set to True).</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="kmeansselector">
+<h2>KmeansSelector<a class="headerlink" href="#kmeansselector" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="alien.selection.KmeansSelector">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">alien.selection.</span></span><span class="sig-name descname"><span class="pre">KmeansSelector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labelled_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'X'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_indices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/selection/kmeans.html#KmeansSelector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.selection.KmeansSelector" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#alien.selection.SampleSelector" title="alien.selection.selector.SampleSelector"><code class="xref py py-class docutils literal notranslate"><span class="pre">SampleSelector</span></code></a></p>
+<p>Selector based on K-Means algorithm.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.selection.KmeansSelector.model_predict">
+<span class="sig-name descname"><span class="pre">model_predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_std_dev</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.selection.KmeansSelector.model_predict" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.selection.KmeansSelector.prediction_prior">
+<span class="sig-name descname"><span class="pre">prediction_prior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">samples</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.selection.KmeansSelector.prediction_prior" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.selection.KmeansSelector.select">
+<span class="sig-name descname"><span class="pre">select</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fixed_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fixed_prior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_indices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tail_call</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.selection.KmeansSelector.select" title="Permalink to this definition"></a></dt>
+<dd><p>Selects a batch from the provided samples, and returns it (or its
+indices).</p>
+<p>All of the arguments to <a class="reference internal" href="#alien.selection.KmeansSelector.select" title="alien.selection.KmeansSelector.select"><code class="xref py py-meth docutils literal notranslate"><span class="pre">select()</span></code></a> are optional. If you have provided
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">samples</span></code> and other necessary parameters to the constructor already,
+then you may omit them here.</p>
+<p>However, some parameters here are <em>not</em> in the constructor: <code class="xref py py-obj docutils literal notranslate"><span class="pre">fixed_samples</span></code> and
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">fixed_prior</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>batch_size</strong> (<em>int</em><em>, </em><em>optional</em>) – The size of the batch to select.</p></li>
+<li><p><strong>samples</strong> (<em>ArrayLike</em><em>, </em><em>optional</em>) – The sample pool to select from. Can be a numpy-style addressable
+array (with first dimension indexing samples, and other dimensions indexing
+features)—note that <code class="xref py py-class docutils literal notranslate"><span class="pre">alien.data.Dataset</span></code> serves this purpose—or an instance of
+<code class="xref py py-class docutils literal notranslate"><span class="pre">sample_generation.SampleGenerator</span></code>, in which case the num_samples
+parameter isnin effect.</p></li>
+<li><p><strong>num_samples</strong> – If a <code class="xref py py-obj docutils literal notranslate"><span class="pre">SampleGenerator</span></code> has been provided via the ‘samples’
+parameter, then at the start of a call to <a class="reference internal" href="#alien.selection.KmeansSelector.select" title="alien.selection.KmeansSelector.select"><code class="xref py py-meth docutils literal notranslate"><span class="pre">select()</span></code></a>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">num_samples</span></code>
+samples will be drawn from the <code class="xref py py-obj docutils literal notranslate"><span class="pre">SampleGenerator</span></code>, or as many samples as the
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">SampleGenerator</span></code> can provide, whichever is less. Defaults to Inf, i.e., draws
+as many samples as available.</p></li>
+<li><p><strong>prior</strong> – A “prior probability” for each sample. May be an array of numbers, a function,
+or the string <code class="xref py py-obj docutils literal notranslate"><span class="pre">'prediction'</span></code>. A more detailed explanation is above,
+in the class definition. Defaults to the constant value 1.</p></li>
+<li><p><strong>prior_scale</strong> – The prior will be raised to this power before applying it to
+the samples. Defaults to 1.</p></li>
+<li><p><strong>prefilter</strong> – Reduces the incoming sample pool before applying batch
+selection. If 0 &lt; prefilter &lt; 1, we use this fraction of the
+sample pool. If prefilter &gt;= 1, we use this many samples. A more detailed explanation
+if above, in the class definition.</p></li>
+<li><p><strong>return_indices</strong> – If True, <a class="reference internal" href="#alien.selection.KmeansSelector.select" title="alien.selection.KmeansSelector.select"><code class="xref py py-meth docutils literal notranslate"><span class="pre">select()</span></code></a> will return the indices of
+the selection (from within the given sample pool). If False,
+<a class="reference internal" href="#alien.selection.KmeansSelector.select" title="alien.selection.KmeansSelector.select"><code class="xref py py-meth docutils literal notranslate"><span class="pre">select()</span></code></a> will return the actual selected samples. Defaults to <code class="xref py py-obj docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><strong>X_key</strong> – The key used to extract the X values from <code class="xref py py-obj docutils literal notranslate"><span class="pre">samples</span></code>. I.e.,
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">X</span> <span class="pre">=</span> <span class="pre">samples[X_key]</span></code>. This is only in effect if you pass an
+explicit value to <code class="xref py py-obj docutils literal notranslate"><span class="pre">X_key</span></code>, or if <code class="xref py py-obj docutils literal notranslate"><span class="pre">samples</span></code> is a <code class="xref py py-class docutils literal notranslate"><span class="pre">DictDatabase</span></code>
+with key <code class="xref py py-obj docutils literal notranslate"><span class="pre">'X'</span></code>. By default, <code class="xref py py-obj docutils literal notranslate"><span class="pre">X</span> <span class="pre">=</span> <span class="pre">samples</span></code>.</p></li>
+<li><p><strong>fixed_samples</strong> (<em>ArrayLike</em><em>, </em><em>optional</em>) – This parameter is for passing in those samples which have been
+previously selected for labeling, but which haven’t been labeled yet.
+(Eg., you’ve previously sent off a batch to the laboratory pipeline for
+testing, but you need to select the next batch for the pipeline before
+the results are in.)
+Some selection strategies (eg., <a class="reference internal" href="#alien.selection.CovarianceSelector" title="alien.selection.CovarianceSelector"><code class="xref py py-class docutils literal notranslate"><span class="pre">CovarianceSelector</span></code></a> and
+<a class="reference internal" href="#alien.selection.BAITSelector" title="alien.selection.BAITSelector"><code class="xref py py-class docutils literal notranslate"><span class="pre">BAITSelector</span></code></a>) will use this information to avoid redundancy
+between the newly selected batch and the <code class="xref py py-obj docutils literal notranslate"><span class="pre">fixed_samples</span></code>.</p></li>
+<li><p><strong>fixed_prior</strong> – If you provide an explicit (i.e., array-like) prior for <code class="xref py py-obj docutils literal notranslate"><span class="pre">samples</span></code>, then
+you must also provide a prior for <code class="xref py py-obj docutils literal notranslate"><span class="pre">fixed_samples</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The selected batch, either as a sub-array of <code class="xref py py-obj docutils literal notranslate"><span class="pre">samples</span></code>, or as an array of
+indices into <code class="xref py py-obj docutils literal notranslate"><span class="pre">samples</span></code> (if <code class="xref py py-obj docutils literal notranslate"><span class="pre">return_indices</span></code> is set to True).</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="randomselector">
+<h2>RandomSelector<a class="headerlink" href="#randomselector" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="alien.selection.RandomSelector">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">alien.selection.</span></span><span class="sig-name descname"><span class="pre">RandomSelector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/selection/random.html#RandomSelector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.selection.RandomSelector" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#alien.selection.SampleSelector" title="alien.selection.selector.SampleSelector"><code class="xref py py-class docutils literal notranslate"><span class="pre">SampleSelector</span></code></a></p>
+<p>Select samples at random.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.selection.RandomSelector.model_predict">
+<span class="sig-name descname"><span class="pre">model_predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_std_dev</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.selection.RandomSelector.model_predict" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.selection.RandomSelector.prediction_prior">
+<span class="sig-name descname"><span class="pre">prediction_prior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">samples</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.selection.RandomSelector.prediction_prior" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.selection.RandomSelector.select">
+<span class="sig-name descname"><span class="pre">select</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fixed_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fixed_prior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_indices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tail_call</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.selection.RandomSelector.select" title="Permalink to this definition"></a></dt>
+<dd><p>Selects a batch from the provided samples, and returns it (or its
+indices).</p>
+<p>All of the arguments to <a class="reference internal" href="#alien.selection.RandomSelector.select" title="alien.selection.RandomSelector.select"><code class="xref py py-meth docutils literal notranslate"><span class="pre">select()</span></code></a> are optional. If you have provided
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">samples</span></code> and other necessary parameters to the constructor already,
+then you may omit them here.</p>
+<p>However, some parameters here are <em>not</em> in the constructor: <code class="xref py py-obj docutils literal notranslate"><span class="pre">fixed_samples</span></code> and
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">fixed_prior</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>batch_size</strong> (<em>int</em><em>, </em><em>optional</em>) – The size of the batch to select.</p></li>
+<li><p><strong>samples</strong> (<em>ArrayLike</em><em>, </em><em>optional</em>) – The sample pool to select from. Can be a numpy-style addressable
+array (with first dimension indexing samples, and other dimensions indexing
+features)—note that <code class="xref py py-class docutils literal notranslate"><span class="pre">alien.data.Dataset</span></code> serves this purpose—or an instance of
+<code class="xref py py-class docutils literal notranslate"><span class="pre">sample_generation.SampleGenerator</span></code>, in which case the num_samples
+parameter isnin effect.</p></li>
+<li><p><strong>num_samples</strong> – If a <code class="xref py py-obj docutils literal notranslate"><span class="pre">SampleGenerator</span></code> has been provided via the ‘samples’
+parameter, then at the start of a call to <a class="reference internal" href="#alien.selection.RandomSelector.select" title="alien.selection.RandomSelector.select"><code class="xref py py-meth docutils literal notranslate"><span class="pre">select()</span></code></a>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">num_samples</span></code>
+samples will be drawn from the <code class="xref py py-obj docutils literal notranslate"><span class="pre">SampleGenerator</span></code>, or as many samples as the
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">SampleGenerator</span></code> can provide, whichever is less. Defaults to Inf, i.e., draws
+as many samples as available.</p></li>
+<li><p><strong>prior</strong> – A “prior probability” for each sample. May be an array of numbers, a function,
+or the string <code class="xref py py-obj docutils literal notranslate"><span class="pre">'prediction'</span></code>. A more detailed explanation is above,
+in the class definition. Defaults to the constant value 1.</p></li>
+<li><p><strong>prior_scale</strong> – The prior will be raised to this power before applying it to
+the samples. Defaults to 1.</p></li>
+<li><p><strong>prefilter</strong> – Reduces the incoming sample pool before applying batch
+selection. If 0 &lt; prefilter &lt; 1, we use this fraction of the
+sample pool. If prefilter &gt;= 1, we use this many samples. A more detailed explanation
+if above, in the class definition.</p></li>
+<li><p><strong>return_indices</strong> – If True, <a class="reference internal" href="#alien.selection.RandomSelector.select" title="alien.selection.RandomSelector.select"><code class="xref py py-meth docutils literal notranslate"><span class="pre">select()</span></code></a> will return the indices of
+the selection (from within the given sample pool). If False,
+<a class="reference internal" href="#alien.selection.RandomSelector.select" title="alien.selection.RandomSelector.select"><code class="xref py py-meth docutils literal notranslate"><span class="pre">select()</span></code></a> will return the actual selected samples. Defaults to <code class="xref py py-obj docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><strong>X_key</strong> – The key used to extract the X values from <code class="xref py py-obj docutils literal notranslate"><span class="pre">samples</span></code>. I.e.,
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">X</span> <span class="pre">=</span> <span class="pre">samples[X_key]</span></code>. This is only in effect if you pass an
+explicit value to <code class="xref py py-obj docutils literal notranslate"><span class="pre">X_key</span></code>, or if <code class="xref py py-obj docutils literal notranslate"><span class="pre">samples</span></code> is a <code class="xref py py-class docutils literal notranslate"><span class="pre">DictDatabase</span></code>
+with key <code class="xref py py-obj docutils literal notranslate"><span class="pre">'X'</span></code>. By default, <code class="xref py py-obj docutils literal notranslate"><span class="pre">X</span> <span class="pre">=</span> <span class="pre">samples</span></code>.</p></li>
+<li><p><strong>fixed_samples</strong> (<em>ArrayLike</em><em>, </em><em>optional</em>) – This parameter is for passing in those samples which have been
+previously selected for labeling, but which haven’t been labeled yet.
+(Eg., you’ve previously sent off a batch to the laboratory pipeline for
+testing, but you need to select the next batch for the pipeline before
+the results are in.)
+Some selection strategies (eg., <a class="reference internal" href="#alien.selection.CovarianceSelector" title="alien.selection.CovarianceSelector"><code class="xref py py-class docutils literal notranslate"><span class="pre">CovarianceSelector</span></code></a> and
+<a class="reference internal" href="#alien.selection.BAITSelector" title="alien.selection.BAITSelector"><code class="xref py py-class docutils literal notranslate"><span class="pre">BAITSelector</span></code></a>) will use this information to avoid redundancy
+between the newly selected batch and the <code class="xref py py-obj docutils literal notranslate"><span class="pre">fixed_samples</span></code>.</p></li>
+<li><p><strong>fixed_prior</strong> – If you provide an explicit (i.e., array-like) prior for <code class="xref py py-obj docutils literal notranslate"><span class="pre">samples</span></code>, then
+you must also provide a prior for <code class="xref py py-obj docutils literal notranslate"><span class="pre">fixed_samples</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The selected batch, either as a sub-array of <code class="xref py py-obj docutils literal notranslate"><span class="pre">samples</span></code>, or as an array of
+indices into <code class="xref py py-obj docutils literal notranslate"><span class="pre">samples</span></code> (if <code class="xref py py-obj docutils literal notranslate"><span class="pre">return_indices</span></code> is set to True).</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="timestampselector">
+<h2>TimestampSelector<a class="headerlink" href="#timestampselector" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="alien.selection.TimestampSelector">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">alien.selection.</span></span><span class="sig-name descname"><span class="pre">TimestampSelector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timestamp_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'t'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timestamps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/selection/timestamp.html#TimestampSelector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.selection.TimestampSelector" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#alien.selection.SampleSelector" title="alien.selection.selector.SampleSelector"><code class="xref py py-class docutils literal notranslate"><span class="pre">SampleSelector</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.selection.TimestampSelector.model_predict">
+<span class="sig-name descname"><span class="pre">model_predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_std_dev</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.selection.TimestampSelector.model_predict" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.selection.TimestampSelector.prediction_prior">
+<span class="sig-name descname"><span class="pre">prediction_prior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">samples</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.selection.TimestampSelector.prediction_prior" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.selection.TimestampSelector.select">
+<span class="sig-name descname"><span class="pre">select</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fixed_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fixed_prior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_indices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tail_call</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.selection.TimestampSelector.select" title="Permalink to this definition"></a></dt>
+<dd><p>Selects a batch from the provided samples, and returns it (or its
+indices).</p>
+<p>All of the arguments to <a class="reference internal" href="#alien.selection.TimestampSelector.select" title="alien.selection.TimestampSelector.select"><code class="xref py py-meth docutils literal notranslate"><span class="pre">select()</span></code></a> are optional. If you have provided
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">samples</span></code> and other necessary parameters to the constructor already,
+then you may omit them here.</p>
+<p>However, some parameters here are <em>not</em> in the constructor: <code class="xref py py-obj docutils literal notranslate"><span class="pre">fixed_samples</span></code> and
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">fixed_prior</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>batch_size</strong> (<em>int</em><em>, </em><em>optional</em>) – The size of the batch to select.</p></li>
+<li><p><strong>samples</strong> (<em>ArrayLike</em><em>, </em><em>optional</em>) – The sample pool to select from. Can be a numpy-style addressable
+array (with first dimension indexing samples, and other dimensions indexing
+features)—note that <code class="xref py py-class docutils literal notranslate"><span class="pre">alien.data.Dataset</span></code> serves this purpose—or an instance of
+<code class="xref py py-class docutils literal notranslate"><span class="pre">sample_generation.SampleGenerator</span></code>, in which case the num_samples
+parameter isnin effect.</p></li>
+<li><p><strong>num_samples</strong> – If a <code class="xref py py-obj docutils literal notranslate"><span class="pre">SampleGenerator</span></code> has been provided via the ‘samples’
+parameter, then at the start of a call to <a class="reference internal" href="#alien.selection.TimestampSelector.select" title="alien.selection.TimestampSelector.select"><code class="xref py py-meth docutils literal notranslate"><span class="pre">select()</span></code></a>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">num_samples</span></code>
+samples will be drawn from the <code class="xref py py-obj docutils literal notranslate"><span class="pre">SampleGenerator</span></code>, or as many samples as the
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">SampleGenerator</span></code> can provide, whichever is less. Defaults to Inf, i.e., draws
+as many samples as available.</p></li>
+<li><p><strong>prior</strong> – A “prior probability” for each sample. May be an array of numbers, a function,
+or the string <code class="xref py py-obj docutils literal notranslate"><span class="pre">'prediction'</span></code>. A more detailed explanation is above,
+in the class definition. Defaults to the constant value 1.</p></li>
+<li><p><strong>prior_scale</strong> – The prior will be raised to this power before applying it to
+the samples. Defaults to 1.</p></li>
+<li><p><strong>prefilter</strong> – Reduces the incoming sample pool before applying batch
+selection. If 0 &lt; prefilter &lt; 1, we use this fraction of the
+sample pool. If prefilter &gt;= 1, we use this many samples. A more detailed explanation
+if above, in the class definition.</p></li>
+<li><p><strong>return_indices</strong> – If True, <a class="reference internal" href="#alien.selection.TimestampSelector.select" title="alien.selection.TimestampSelector.select"><code class="xref py py-meth docutils literal notranslate"><span class="pre">select()</span></code></a> will return the indices of
+the selection (from within the given sample pool). If False,
+<a class="reference internal" href="#alien.selection.TimestampSelector.select" title="alien.selection.TimestampSelector.select"><code class="xref py py-meth docutils literal notranslate"><span class="pre">select()</span></code></a> will return the actual selected samples. Defaults to <code class="xref py py-obj docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><strong>X_key</strong> – The key used to extract the X values from <code class="xref py py-obj docutils literal notranslate"><span class="pre">samples</span></code>. I.e.,
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">X</span> <span class="pre">=</span> <span class="pre">samples[X_key]</span></code>. This is only in effect if you pass an
+explicit value to <code class="xref py py-obj docutils literal notranslate"><span class="pre">X_key</span></code>, or if <code class="xref py py-obj docutils literal notranslate"><span class="pre">samples</span></code> is a <code class="xref py py-class docutils literal notranslate"><span class="pre">DictDatabase</span></code>
+with key <code class="xref py py-obj docutils literal notranslate"><span class="pre">'X'</span></code>. By default, <code class="xref py py-obj docutils literal notranslate"><span class="pre">X</span> <span class="pre">=</span> <span class="pre">samples</span></code>.</p></li>
+<li><p><strong>fixed_samples</strong> (<em>ArrayLike</em><em>, </em><em>optional</em>) – This parameter is for passing in those samples which have been
+previously selected for labeling, but which haven’t been labeled yet.
+(Eg., you’ve previously sent off a batch to the laboratory pipeline for
+testing, but you need to select the next batch for the pipeline before
+the results are in.)
+Some selection strategies (eg., <a class="reference internal" href="#alien.selection.CovarianceSelector" title="alien.selection.CovarianceSelector"><code class="xref py py-class docutils literal notranslate"><span class="pre">CovarianceSelector</span></code></a> and
+<a class="reference internal" href="#alien.selection.BAITSelector" title="alien.selection.BAITSelector"><code class="xref py py-class docutils literal notranslate"><span class="pre">BAITSelector</span></code></a>) will use this information to avoid redundancy
+between the newly selected batch and the <code class="xref py py-obj docutils literal notranslate"><span class="pre">fixed_samples</span></code>.</p></li>
+<li><p><strong>fixed_prior</strong> – If you provide an explicit (i.e., array-like) prior for <code class="xref py py-obj docutils literal notranslate"><span class="pre">samples</span></code>, then
+you must also provide a prior for <code class="xref py py-obj docutils literal notranslate"><span class="pre">fixed_samples</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The selected batch, either as a sub-array of <code class="xref py py-obj docutils literal notranslate"><span class="pre">samples</span></code>, or as an array of
+indices into <code class="xref py py-obj docutils literal notranslate"><span class="pre">samples</span></code> (if <code class="xref py py-obj docutils literal notranslate"><span class="pre">return_indices</span></code> is set to True).</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="alien.models.html" class="btn btn-neutral float-left" title="alien.models" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="alien.benchmarks.html" class="btn btn-neutral float-right" title="alien.benchmarks" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

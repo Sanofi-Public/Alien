@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>alien.models &mdash; ALIEN 1.1.2 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="alien.selection" href="alien.selection.html" />
+    <link rel="prev" title="Installation" href="installation.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            ALIEN
+          </a>
+              <div class="version">
+                1.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="active_learning.html">What is active learning?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">alien.models</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#deep-learning-models">Deep learning models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#how-to-choose">How to choose?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#gradient-boosting-models">Gradient boosting models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#other-models">Other models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#abstract-base-classes">Abstract base classes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#alien.models.Model"><code class="docutils literal notranslate"><span class="pre">Model</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.Model.predict"><code class="docutils literal notranslate"><span class="pre">Model.predict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.Model.predict_samples"><code class="docutils literal notranslate"><span class="pre">Model.predict_samples()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.Model.fit"><code class="docutils literal notranslate"><span class="pre">Model.fit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.Model.fit_model"><code class="docutils literal notranslate"><span class="pre">Model.fit_model()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.Model.fit_uncertainty"><code class="docutils literal notranslate"><span class="pre">Model.fit_uncertainty()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.Model.shape"><code class="docutils literal notranslate"><span class="pre">Model.shape</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.Model.ndim"><code class="docutils literal notranslate"><span class="pre">Model.ndim</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.Model.initialize"><code class="docutils literal notranslate"><span class="pre">Model.initialize()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.Model.save"><code class="docutils literal notranslate"><span class="pre">Model.save()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.Model.load"><code class="docutils literal notranslate"><span class="pre">Model.load()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#alien.models.Regressor"><code class="docutils literal notranslate"><span class="pre">Regressor</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.Regressor.predict"><code class="docutils literal notranslate"><span class="pre">Regressor.predict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.Regressor.fit"><code class="docutils literal notranslate"><span class="pre">Regressor.fit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.Regressor.fit_model"><code class="docutils literal notranslate"><span class="pre">Regressor.fit_model()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.Regressor.fit_uncertainty"><code class="docutils literal notranslate"><span class="pre">Regressor.fit_uncertainty()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.Regressor.initialize"><code class="docutils literal notranslate"><span class="pre">Regressor.initialize()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.Regressor.load"><code class="docutils literal notranslate"><span class="pre">Regressor.load()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.Regressor.ndim"><code class="docutils literal notranslate"><span class="pre">Regressor.ndim</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.Regressor.predict_samples"><code class="docutils literal notranslate"><span class="pre">Regressor.predict_samples()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.Regressor.save"><code class="docutils literal notranslate"><span class="pre">Regressor.save()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.Regressor.shape"><code class="docutils literal notranslate"><span class="pre">Regressor.shape</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#alien.models.CovarianceRegressor"><code class="docutils literal notranslate"><span class="pre">CovarianceRegressor</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.CovarianceRegressor.covariance"><code class="docutils literal notranslate"><span class="pre">CovarianceRegressor.covariance()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.CovarianceRegressor.predict_ensemble"><code class="docutils literal notranslate"><span class="pre">CovarianceRegressor.predict_ensemble()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.CovarianceRegressor.predict_samples"><code class="docutils literal notranslate"><span class="pre">CovarianceRegressor.predict_samples()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.CovarianceRegressor.std_dev"><code class="docutils literal notranslate"><span class="pre">CovarianceRegressor.std_dev()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.CovarianceRegressor.fit"><code class="docutils literal notranslate"><span class="pre">CovarianceRegressor.fit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.CovarianceRegressor.fit_model"><code class="docutils literal notranslate"><span class="pre">CovarianceRegressor.fit_model()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.CovarianceRegressor.fit_uncertainty"><code class="docutils literal notranslate"><span class="pre">CovarianceRegressor.fit_uncertainty()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.CovarianceRegressor.initialize"><code class="docutils literal notranslate"><span class="pre">CovarianceRegressor.initialize()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.CovarianceRegressor.load"><code class="docutils literal notranslate"><span class="pre">CovarianceRegressor.load()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.CovarianceRegressor.ndim"><code class="docutils literal notranslate"><span class="pre">CovarianceRegressor.ndim</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.CovarianceRegressor.predict"><code class="docutils literal notranslate"><span class="pre">CovarianceRegressor.predict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.CovarianceRegressor.save"><code class="docutils literal notranslate"><span class="pre">CovarianceRegressor.save()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.CovarianceRegressor.shape"><code class="docutils literal notranslate"><span class="pre">CovarianceRegressor.shape</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#alien.models.EnsembleRegressor"><code class="docutils literal notranslate"><span class="pre">EnsembleRegressor</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.EnsembleRegressor.predict"><code class="docutils literal notranslate"><span class="pre">EnsembleRegressor.predict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.EnsembleRegressor.predict_ensemble"><code class="docutils literal notranslate"><span class="pre">EnsembleRegressor.predict_ensemble()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.EnsembleRegressor.predict_samples"><code class="docutils literal notranslate"><span class="pre">EnsembleRegressor.predict_samples()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.EnsembleRegressor.covariance_ensemble"><code class="docutils literal notranslate"><span class="pre">EnsembleRegressor.covariance_ensemble()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.EnsembleRegressor.std_dev_ensemble"><code class="docutils literal notranslate"><span class="pre">EnsembleRegressor.std_dev_ensemble()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.EnsembleRegressor.covariance"><code class="docutils literal notranslate"><span class="pre">EnsembleRegressor.covariance()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.EnsembleRegressor.fit"><code class="docutils literal notranslate"><span class="pre">EnsembleRegressor.fit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.EnsembleRegressor.fit_model"><code class="docutils literal notranslate"><span class="pre">EnsembleRegressor.fit_model()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.EnsembleRegressor.fit_uncertainty"><code class="docutils literal notranslate"><span class="pre">EnsembleRegressor.fit_uncertainty()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.EnsembleRegressor.initialize"><code class="docutils literal notranslate"><span class="pre">EnsembleRegressor.initialize()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.EnsembleRegressor.load"><code class="docutils literal notranslate"><span class="pre">EnsembleRegressor.load()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.EnsembleRegressor.ndim"><code class="docutils literal notranslate"><span class="pre">EnsembleRegressor.ndim</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.EnsembleRegressor.save"><code class="docutils literal notranslate"><span class="pre">EnsembleRegressor.save()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.EnsembleRegressor.shape"><code class="docutils literal notranslate"><span class="pre">EnsembleRegressor.shape</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#alien.models.EnsembleRegressor.std_dev"><code class="docutils literal notranslate"><span class="pre">EnsembleRegressor.std_dev()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="alien.selection.html">alien.selection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="alien.benchmarks.html">alien.benchmarks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="alien.data.html">alien.data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="alien.sample_generation.html">alien.sample_generation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">ALIEN</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">alien.models</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/alien.models.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-alien.models">
+<span id="alien-models"></span><h1>alien.models<a class="headerlink" href="#module-alien.models" title="Permalink to this heading"></a></h1>
+<p>This module contains wrapper classes for various kinds of ML models. To use
+an externally-built model with ALIEN’s selector classes, you must first wrap
+it in the appropriate subclass of <a class="reference internal" href="#alien.models.Model" title="alien.models.Model"><code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></a>.</p>
+<p>The documentation for <a class="reference internal" href="#alien.models.Model" title="alien.models.Model"><code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></a> explains the shared interface for all
+models in the ALIEN universe.</p>
+<section id="deep-learning-models">
+<h2>Deep learning models<a class="headerlink" href="#deep-learning-models" title="Permalink to this heading"></a></h2>
+<p>An easy solution is to wrap your regression model (Pytorch, Keras or DeepChem)
+with the <a class="reference internal" href="#alien.models.Regressor" title="alien.models.Regressor"><code class="xref py py-class docutils literal notranslate"><span class="pre">Regressor</span></code></a> class:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">wrapped_model</span> <span class="o">=</span> <span class="n">alien</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">Regressor</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">uncertainty</span><span class="o">=</span><span class="s1">&#39;dropout&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This will tool your model to use dropouts to produce uncertainties and embeddings. Alternatively,
+you may use <code class="xref py py-obj docutils literal notranslate"><span class="pre">uncertainty='laplace'</span></code>, in which case we will use the Laplace approximation
+on the last layer of weights to produce uncertainties.</p>
+</section>
+<section id="how-to-choose">
+<h2>How to choose?<a class="headerlink" href="#how-to-choose" title="Permalink to this heading"></a></h2>
+<p>If you have an existing labeled dataset in a similar problem domain, you can try
+running a <span class="xref std std-ref">retrospective experiment</span> with the different
+options. However, we do have some hints:</p>
+<p>MC dropout, with the <code class="xref py py-class docutils literal notranslate"><span class="pre">CovarianceSelector</span></code>, does best for regression
+problems in our extensive benchmarks, so that’s a good place to start.</p>
+</section>
+<section id="gradient-boosting-models">
+<h2>Gradient boosting models<a class="headerlink" href="#gradient-boosting-models" title="Permalink to this heading"></a></h2>
+<p>ALIEN directly supports a number of ensemble models, including</p>
+<ul class="simple">
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">LightGBMRegressor</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">CatBoostRegressor</span></code></p></li>
+</ul>
+<p>plus a number of Scikit-Learn models, listed below.</p>
+</section>
+<section id="other-models">
+<h2>Other models<a class="headerlink" href="#other-models" title="Permalink to this heading"></a></h2>
+<p>ALIEN supports linear models in the form of Bayesian ridge regression
+(which is convenient for getting covariances), in its Scikit-Learn
+implementation:</p>
+<ul class="simple">
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">BayesianRidgeRegressor</span></code></p></li>
+</ul>
+<p>In fact, we support a number of Scikit-Learn models:</p>
+<ul class="simple">
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">GaussianProcessRegressor</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomForestRegressor</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ExtraTreesRegressor</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">GradientBoostingRegressor</span></code></p></li>
+</ul>
+</section>
+<section id="abstract-base-classes">
+<h2>Abstract base classes<a class="headerlink" href="#abstract-base-classes" title="Permalink to this heading"></a></h2>
+<p>The superclass for all model wrapper classes:</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="alien.models.Model">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">alien.models.</span></span><span class="sig-name descname"><span class="pre">Model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reinitialize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">init_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ensemble_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">40</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/models/models.html#Model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.models.Model" title="Permalink to this definition"></a></dt>
+<dd><p>Abstract base class for wrapping a model.
+Implementers must provide prediction and
+fitting (training) methods.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> – <p>You may provide training data at the time of initialization.
+You may do so by passing <code class="xref py py-obj docutils literal notranslate"><span class="pre">X</span></code> and <code class="xref py py-obj docutils literal notranslate"><span class="pre">y</span></code> parameters, or by passing a
+combined <code class="xref py py-obj docutils literal notranslate"><span class="pre">data</span></code> (from which the model will extract <code class="xref py py-obj docutils literal notranslate"><span class="pre">data.X</span></code> and
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">data.y</span></code>, if available, otherwise <code class="xref py py-obj docutils literal notranslate"><span class="pre">data[:-1]</span></code> and <code class="xref py py-obj docutils literal notranslate"><span class="pre">data[-1]</span></code>).</p>
+<p>You may instead pass in the training data when you call <a class="reference internal" href="#alien.models.Model.fit" title="alien.models.Model.fit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit()</span></code></a>.</p>
+</p></li>
+<li><p><strong>y</strong> – </p></li>
+<li><p><strong>data</strong> – </p></li>
+<li><p><strong>shape</strong> – Specifies the <a class="reference internal" href="#alien.models.Model.shape" title="alien.models.Model.shape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">shape</span></code></a> of the feature space. This will
+be set automatically if you provide training data.</p></li>
+<li><p><strong>random_seed</strong> – Random seed for those models that need it.</p></li>
+<li><p><strong>init_seed</strong> – Random seed for initializing model weights. This is
+stored, and after each call to <a class="reference internal" href="#alien.models.Model.initialize" title="alien.models.Model.initialize"><code class="xref py py-meth docutils literal notranslate"><span class="pre">initialize()</span></code></a>, it is incremented
+by <code class="xref py py-obj docutils literal notranslate"><span class="pre">INIT_SEED_INCREMENT</span></code>.</p></li>
+<li><p><strong>reinitialize</strong> – Whether to reinitialize model weights before each
+<a class="reference internal" href="#alien.models.Model.fit" title="alien.models.Model.fit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit()</span></code></a>. Defaults to <code class="xref py py-obj docutils literal notranslate"><span class="pre">True</span></code>.</p></li>
+<li><p><strong>ensemble_size</strong> – Sets the ensemble size. This parameter is used by
+<a class="reference internal" href="#alien.models.CovarianceRegressor.predict_ensemble" title="alien.models.CovarianceRegressor.predict_ensemble"><code class="xref py py-meth docutils literal notranslate"><span class="pre">predict_ensemble()</span></code></a> to determine how many observations to
+produce. It is also used by some ensemble models
+(eg., <code class="xref py py-class docutils literal notranslate"><span class="pre">RandomForestRegressor</span></code> and <code class="xref py py-class docutils literal notranslate"><span class="pre">CatBoostRegressor</span></code>)
+to set the size of their ensemble of estimators.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.models.Model.predict">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/models/models.html#Model.predict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.models.Model.predict" title="Permalink to this definition"></a></dt>
+<dd><p>Applies the model to input(s) X (with the last self.ndim
+axes corresponding to each sample), and returns prediction(s).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.models.Model.predict_samples">
+<span class="sig-name descname"><span class="pre">predict_samples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/models/models.html#Model.predict_samples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.models.Model.predict_samples" title="Permalink to this definition"></a></dt>
+<dd><p>Makes a prediction for for the batch X, randomly selected from
+this model’s posterior distribution. Gives an
+ensemble of predictions, with shape <code class="xref py py-obj docutils literal notranslate"><span class="pre">(len(X),</span> <span class="pre">n)</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.models.Model.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reinitialize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fit_uncertainty</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/models/models.html#Model.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.models.Model.fit" title="Permalink to this definition"></a></dt>
+<dd><p>Fits the model to the given training data. If <code class="xref py py-obj docutils literal notranslate"><span class="pre">X</span></code> and <code class="xref py py-obj docutils literal notranslate"><span class="pre">y</span></code> are
+not specified, this method looks for <code class="xref py py-obj docutils literal notranslate"><span class="pre">self.X</span></code> and <code class="xref py py-obj docutils literal notranslate"><span class="pre">self.y</span></code>. If
+<a class="reference internal" href="#alien.models.Model.fit" title="alien.models.Model.fit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit()</span></code></a> finds an <code class="xref py py-obj docutils literal notranslate"><span class="pre">X</span></code> but not a <code class="xref py py-obj docutils literal notranslate"><span class="pre">y</span></code>, it treats <code class="xref py py-obj docutils literal notranslate"><span class="pre">X</span></code> as a
+combined dataset <code class="xref py py-obj docutils literal notranslate"><span class="pre">data</span></code>, and then uses <code class="xref py py-obj docutils literal notranslate"><span class="pre">X,</span> <span class="pre">y</span> <span class="pre">=</span> <span class="pre">data.X,</span> <span class="pre">data.y</span></code>.
+If we can’t find <code class="xref py py-obj docutils literal notranslate"><span class="pre">data.X</span></code> and <code class="xref py py-obj docutils literal notranslate"><span class="pre">data.y</span></code>, we instead use
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">X,</span> <span class="pre">y</span> <span class="pre">=</span> <span class="pre">data[:-1],</span> <span class="pre">data[-1]</span></code>.</p>
+<p><a class="reference internal" href="#alien.models.Model.fit" title="alien.models.Model.fit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit()</span></code></a> should also fit any accompanying uncertainty model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>reinitialize</strong> – If <code class="xref py py-obj docutils literal notranslate"><span class="pre">True</span></code>, reinitializes model weights before
+fitting. If <code class="xref py py-obj docutils literal notranslate"><span class="pre">False</span></code>, starts training from previous weight values.
+If not specified, uses <code class="xref py py-obj docutils literal notranslate"><span class="pre">self.reinitialize</span></code>)</p></li>
+<li><p><strong>fit_uncertainty</strong> – If <code class="xref py py-obj docutils literal notranslate"><span class="pre">True</span></code>, a call to <a class="reference internal" href="#alien.models.Model.fit" title="alien.models.Model.fit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit()</span></code></a> will also call
+<a class="reference internal" href="#alien.models.Model.fit_uncertainty" title="alien.models.Model.fit_uncertainty"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit_uncertainty()</span></code></a>. Defaults to <code class="xref py py-obj docutils literal notranslate"><span class="pre">True</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.models.Model.fit_model">
+<span class="sig-name descname"><span class="pre">fit_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/models/models.html#Model.fit_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.models.Model.fit_model" title="Permalink to this definition"></a></dt>
+<dd><p>Fit just the model component, and not the uncertainties (if these are
+computed separately)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.models.Model.fit_uncertainty">
+<span class="sig-name descname"><span class="pre">fit_uncertainty</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/models/models.html#Model.fit_uncertainty"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.models.Model.fit_uncertainty" title="Permalink to this definition"></a></dt>
+<dd><p>Fit just the uncertainties (if these need additional fitting beyond
+just the model)</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="alien.models.Model.shape">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">shape</span></span><a class="headerlink" href="#alien.models.Model.shape" title="Permalink to this definition"></a></dt>
+<dd><p>The shape of the feature space. Can either be specified directly,
+or inferred from training data, in which case
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">self.shape</span> <span class="pre">==</span> <span class="pre">X.shape[1:]</span></code>, i.e., the first (batch) dimension is
+dropped.</p>
+<p>This property is used by any methods which use the <code class="xref py py-obj docutils literal notranslate"><span class="pre">&#64;flatten_batch</span></code>
+decorator.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="alien.models.Model.ndim">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ndim</span></span><a class="headerlink" href="#alien.models.Model.ndim" title="Permalink to this definition"></a></dt>
+<dd><p>The number of axes in the feature space. Equal to <code class="xref py py-obj docutils literal notranslate"><span class="pre">len(self.shape)</span></code>.
+Most commonly equal to 1. If training data have been specified, then
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">self.ndim</span> <span class="pre">==</span> <span class="pre">X.ndim</span> <span class="pre">-</span> <span class="pre">1</span></code>.</p>
+<p>This property is used by any methods which use the <code class="xref py py-obj docutils literal notranslate"><span class="pre">&#64;flatten_batch</span></code>
+decorator.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.models.Model.initialize">
+<span class="sig-name descname"><span class="pre">initialize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">init_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_input</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/models/models.html#Model.initialize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.models.Model.initialize" title="Permalink to this definition"></a></dt>
+<dd><p>(Re)initializes the model weights. If <code class="xref py py-obj docutils literal notranslate"><span class="pre">self.reinitialize</span></code> is True, this
+should be called at the start of every <a class="reference internal" href="#alien.models.Model.fit" title="alien.models.Model.fit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit()</span></code></a>, and this should be
+the default behaviour of <a class="reference internal" href="#alien.models.Model.fit" title="alien.models.Model.fit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.models.Model.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/models/models.html#Model.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.models.Model.save" title="Permalink to this definition"></a></dt>
+<dd><p>Saves the model. May well be overloaded by subclasses, if they contain
+non-picklable components (or pickling would be inefficient).</p>
+<p>For any subclass, the <a class="reference internal" href="#alien.models.Model.save" title="alien.models.Model.save"><code class="xref py py-meth docutils literal notranslate"><span class="pre">save()</span></code></a> and <a class="reference internal" href="#alien.models.Model.load" title="alien.models.Model.load"><code class="xref py py-meth docutils literal notranslate"><span class="pre">load()</span></code></a> methods should be
+compatible with each other.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.models.Model.load">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/models/models.html#Model.load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.models.Model.load" title="Permalink to this definition"></a></dt>
+<dd><p>Loads a model. This particular implementation only works if <code class="xref py py-obj docutils literal notranslate"><span class="pre">save(path)</span></code> hasn’t
+been overloaded.</p>
+</dd></dl>
+
+</dd></dl>
+
+<p>The class you will instantiate to wrap your deep learning models:</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="alien.models.Regressor">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">alien.models.</span></span><span class="sig-name descname"><span class="pre">Regressor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/models/models.html#Regressor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.models.Regressor" title="Permalink to this definition"></a></dt>
+<dd><p>This class can accept as its first argument (or <code class="xref py py-obj docutils literal notranslate"><span class="pre">model</span></code>),
+any of the deep learning models we currently support. So,
+Pytorch, Keras or DeepChem.</p>
+<p><a class="reference internal" href="#alien.models.Regressor" title="alien.models.Regressor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Regressor</span></code></a>’s constructor will build a specialized subclass depending on
+the type of <code class="xref py py-obj docutils literal notranslate"><span class="pre">model</span></code>. The resulting wrapped model will compute uncertainties
+and covariances in the way prescribed by <code class="xref py py-obj docutils literal notranslate"><span class="pre">uncertainty</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – A Pytorch, Keras or DeepChem model, to be wrapped.</p></li>
+<li><p><strong>uncertainty</strong> (<em>str</em>) – can be <code class="xref py py-obj docutils literal notranslate"><span class="pre">'dropout'</span></code> or <code class="xref py py-obj docutils literal notranslate"><span class="pre">'laplace'</span></code>. This determines
+how the model will compute uncertainties and covariances.</p></li>
+<li><p><strong>**kwargs</strong> – You can pass in arguments to the destined subclass. So, for
+example, if <code class="xref py py-obj docutils literal notranslate"><span class="pre">model</span></code> is a DeepChem model, then <code class="xref py py-obj docutils literal notranslate"><span class="pre">**kwargs</span></code> may carry
+any of the arguments accepted by <code class="xref py py-obj docutils literal notranslate"><span class="pre">alien.models.DeepChemRegressor</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.models.Regressor.predict">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_std_dev</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/models/models.html#Regressor.predict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.models.Regressor.predict" title="Permalink to this definition"></a></dt>
+<dd><p>Applies the model to input(s) X (with the last self.ndim
+axes corresponding to each sample), and returns prediction(s).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>return_std_dev</strong> – if True, returns a tuple <code class="xref py py-obj docutils literal notranslate"><span class="pre">(prediction,</span> <span class="pre">std_dev)</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.models.Regressor.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reinitialize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fit_uncertainty</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.models.Regressor.fit" title="Permalink to this definition"></a></dt>
+<dd><p>Fits the model to the given training data. If <code class="xref py py-obj docutils literal notranslate"><span class="pre">X</span></code> and <code class="xref py py-obj docutils literal notranslate"><span class="pre">y</span></code> are
+not specified, this method looks for <code class="xref py py-obj docutils literal notranslate"><span class="pre">self.X</span></code> and <code class="xref py py-obj docutils literal notranslate"><span class="pre">self.y</span></code>. If
+<a class="reference internal" href="#alien.models.Regressor.fit" title="alien.models.Regressor.fit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit()</span></code></a> finds an <code class="xref py py-obj docutils literal notranslate"><span class="pre">X</span></code> but not a <code class="xref py py-obj docutils literal notranslate"><span class="pre">y</span></code>, it treats <code class="xref py py-obj docutils literal notranslate"><span class="pre">X</span></code> as a
+combined dataset <code class="xref py py-obj docutils literal notranslate"><span class="pre">data</span></code>, and then uses <code class="xref py py-obj docutils literal notranslate"><span class="pre">X,</span> <span class="pre">y</span> <span class="pre">=</span> <span class="pre">data.X,</span> <span class="pre">data.y</span></code>.
+If we can’t find <code class="xref py py-obj docutils literal notranslate"><span class="pre">data.X</span></code> and <code class="xref py py-obj docutils literal notranslate"><span class="pre">data.y</span></code>, we instead use
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">X,</span> <span class="pre">y</span> <span class="pre">=</span> <span class="pre">data[:-1],</span> <span class="pre">data[-1]</span></code>.</p>
+<p><a class="reference internal" href="#alien.models.Regressor.fit" title="alien.models.Regressor.fit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit()</span></code></a> should also fit any accompanying uncertainty model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>reinitialize</strong> – If <code class="xref py py-obj docutils literal notranslate"><span class="pre">True</span></code>, reinitializes model weights before
+fitting. If <code class="xref py py-obj docutils literal notranslate"><span class="pre">False</span></code>, starts training from previous weight values.
+If not specified, uses <code class="xref py py-obj docutils literal notranslate"><span class="pre">self.reinitialize</span></code>)</p></li>
+<li><p><strong>fit_uncertainty</strong> – If <code class="xref py py-obj docutils literal notranslate"><span class="pre">True</span></code>, a call to <a class="reference internal" href="#alien.models.Regressor.fit" title="alien.models.Regressor.fit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit()</span></code></a> will also call
+<a class="reference internal" href="#alien.models.Regressor.fit_uncertainty" title="alien.models.Regressor.fit_uncertainty"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit_uncertainty()</span></code></a>. Defaults to <code class="xref py py-obj docutils literal notranslate"><span class="pre">True</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.models.Regressor.fit_model">
+<span class="sig-name descname"><span class="pre">fit_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.models.Regressor.fit_model" title="Permalink to this definition"></a></dt>
+<dd><p>Fit just the model component, and not the uncertainties (if these are
+computed separately)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.models.Regressor.fit_uncertainty">
+<span class="sig-name descname"><span class="pre">fit_uncertainty</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.models.Regressor.fit_uncertainty" title="Permalink to this definition"></a></dt>
+<dd><p>Fit just the uncertainties (if these need additional fitting beyond
+just the model)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.models.Regressor.initialize">
+<span class="sig-name descname"><span class="pre">initialize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">init_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_input</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.models.Regressor.initialize" title="Permalink to this definition"></a></dt>
+<dd><p>(Re)initializes the model weights. If <code class="xref py py-obj docutils literal notranslate"><span class="pre">self.reinitialize</span></code> is True, this
+should be called at the start of every <a class="reference internal" href="#alien.models.Regressor.fit" title="alien.models.Regressor.fit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit()</span></code></a>, and this should be
+the default behaviour of <a class="reference internal" href="#alien.models.Regressor.fit" title="alien.models.Regressor.fit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.models.Regressor.load">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.models.Regressor.load" title="Permalink to this definition"></a></dt>
+<dd><p>Loads a model. This particular implementation only works if <code class="xref py py-obj docutils literal notranslate"><span class="pre">save(path)</span></code> hasn’t
+been overloaded.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="alien.models.Regressor.ndim">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ndim</span></span><a class="headerlink" href="#alien.models.Regressor.ndim" title="Permalink to this definition"></a></dt>
+<dd><p>The number of axes in the feature space. Equal to <code class="xref py py-obj docutils literal notranslate"><span class="pre">len(self.shape)</span></code>.
+Most commonly equal to 1. If training data have been specified, then
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">self.ndim</span> <span class="pre">==</span> <span class="pre">X.ndim</span> <span class="pre">-</span> <span class="pre">1</span></code>.</p>
+<p>This property is used by any methods which use the <code class="xref py py-obj docutils literal notranslate"><span class="pre">&#64;flatten_batch</span></code>
+decorator.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.models.Regressor.predict_samples">
+<span class="sig-name descname"><span class="pre">predict_samples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.models.Regressor.predict_samples" title="Permalink to this definition"></a></dt>
+<dd><p>Makes a prediction for for the batch X, randomly selected from
+this model’s posterior distribution. Gives an
+ensemble of predictions, with shape <code class="xref py py-obj docutils literal notranslate"><span class="pre">(len(X),</span> <span class="pre">n)</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.models.Regressor.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.models.Regressor.save" title="Permalink to this definition"></a></dt>
+<dd><p>Saves the model. May well be overloaded by subclasses, if they contain
+non-picklable components (or pickling would be inefficient).</p>
+<p>For any subclass, the <a class="reference internal" href="#alien.models.Regressor.save" title="alien.models.Regressor.save"><code class="xref py py-meth docutils literal notranslate"><span class="pre">save()</span></code></a> and <a class="reference internal" href="#alien.models.Regressor.load" title="alien.models.Regressor.load"><code class="xref py py-meth docutils literal notranslate"><span class="pre">load()</span></code></a> methods should be
+compatible with each other.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="alien.models.Regressor.shape">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">shape</span></span><a class="headerlink" href="#alien.models.Regressor.shape" title="Permalink to this definition"></a></dt>
+<dd><p>The shape of the feature space. Can either be specified directly,
+or inferred from training data, in which case
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">self.shape</span> <span class="pre">==</span> <span class="pre">X.shape[1:]</span></code>, i.e., the first (batch) dimension is
+dropped.</p>
+<p>This property is used by any methods which use the <code class="xref py py-obj docutils literal notranslate"><span class="pre">&#64;flatten_batch</span></code>
+decorator.</p>
+</dd></dl>
+
+</dd></dl>
+
+<p>Then we have several abstract base classes, defining the class hierarchy:</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="alien.models.CovarianceRegressor">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">alien.models.</span></span><span class="sig-name descname"><span class="pre">CovarianceRegressor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/models/models.html#CovarianceRegressor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.models.CovarianceRegressor" title="Permalink to this definition"></a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="alien.models.CovarianceRegressor.covariance">
+<span class="sig-name descname"><span class="pre">covariance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/models/models.html#CovarianceRegressor.covariance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.models.CovarianceRegressor.covariance" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the covariance of the epistemic uncertainty between all
+rows of X. This is where memory bugs often appear, because of the
+large matrices involved.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.models.CovarianceRegressor.predict_ensemble">
+<span class="sig-name descname"><span class="pre">predict_ensemble</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">multiple</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/models/models.html#CovarianceRegressor.predict_ensemble"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.models.CovarianceRegressor.predict_ensemble" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a correlated ensemble of predictions for samples X.</p>
+<p>Ensembles are correlated only over the last batch dimension,
+corresponding to axis (-1 - self.ndim) of X. Earlier dimensions
+have no guarantee of correlation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>multiple</strong> – standard deviation will be multiplied by this</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.models.CovarianceRegressor.predict_samples">
+<span class="sig-name descname"><span class="pre">predict_samples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">multiple</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_covariance_for_ensemble</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/models/models.html#CovarianceRegressor.predict_samples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.models.CovarianceRegressor.predict_samples" title="Permalink to this definition"></a></dt>
+<dd><p>Makes a prediction for for the batch X, randomly selected from
+this model’s posterior distribution. Gives an
+ensemble of predictions, with shape <code class="xref py py-obj docutils literal notranslate"><span class="pre">(len(X),</span> <span class="pre">n)</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.models.CovarianceRegressor.std_dev">
+<span class="sig-name descname"><span class="pre">std_dev</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/models/models.html#CovarianceRegressor.std_dev"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.models.CovarianceRegressor.std_dev" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the (epistemic) standard deviation of the model
+on input <code class="xref py py-obj docutils literal notranslate"><span class="pre">X</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.models.CovarianceRegressor.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reinitialize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fit_uncertainty</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.models.CovarianceRegressor.fit" title="Permalink to this definition"></a></dt>
+<dd><p>Fits the model to the given training data. If <code class="xref py py-obj docutils literal notranslate"><span class="pre">X</span></code> and <code class="xref py py-obj docutils literal notranslate"><span class="pre">y</span></code> are
+not specified, this method looks for <code class="xref py py-obj docutils literal notranslate"><span class="pre">self.X</span></code> and <code class="xref py py-obj docutils literal notranslate"><span class="pre">self.y</span></code>. If
+<a class="reference internal" href="#alien.models.CovarianceRegressor.fit" title="alien.models.CovarianceRegressor.fit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit()</span></code></a> finds an <code class="xref py py-obj docutils literal notranslate"><span class="pre">X</span></code> but not a <code class="xref py py-obj docutils literal notranslate"><span class="pre">y</span></code>, it treats <code class="xref py py-obj docutils literal notranslate"><span class="pre">X</span></code> as a
+combined dataset <code class="xref py py-obj docutils literal notranslate"><span class="pre">data</span></code>, and then uses <code class="xref py py-obj docutils literal notranslate"><span class="pre">X,</span> <span class="pre">y</span> <span class="pre">=</span> <span class="pre">data.X,</span> <span class="pre">data.y</span></code>.
+If we can’t find <code class="xref py py-obj docutils literal notranslate"><span class="pre">data.X</span></code> and <code class="xref py py-obj docutils literal notranslate"><span class="pre">data.y</span></code>, we instead use
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">X,</span> <span class="pre">y</span> <span class="pre">=</span> <span class="pre">data[:-1],</span> <span class="pre">data[-1]</span></code>.</p>
+<p><a class="reference internal" href="#alien.models.CovarianceRegressor.fit" title="alien.models.CovarianceRegressor.fit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit()</span></code></a> should also fit any accompanying uncertainty model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>reinitialize</strong> – If <code class="xref py py-obj docutils literal notranslate"><span class="pre">True</span></code>, reinitializes model weights before
+fitting. If <code class="xref py py-obj docutils literal notranslate"><span class="pre">False</span></code>, starts training from previous weight values.
+If not specified, uses <code class="xref py py-obj docutils literal notranslate"><span class="pre">self.reinitialize</span></code>)</p></li>
+<li><p><strong>fit_uncertainty</strong> – If <code class="xref py py-obj docutils literal notranslate"><span class="pre">True</span></code>, a call to <a class="reference internal" href="#alien.models.CovarianceRegressor.fit" title="alien.models.CovarianceRegressor.fit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit()</span></code></a> will also call
+<a class="reference internal" href="#alien.models.CovarianceRegressor.fit_uncertainty" title="alien.models.CovarianceRegressor.fit_uncertainty"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit_uncertainty()</span></code></a>. Defaults to <code class="xref py py-obj docutils literal notranslate"><span class="pre">True</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.models.CovarianceRegressor.fit_model">
+<span class="sig-name descname"><span class="pre">fit_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.models.CovarianceRegressor.fit_model" title="Permalink to this definition"></a></dt>
+<dd><p>Fit just the model component, and not the uncertainties (if these are
+computed separately)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.models.CovarianceRegressor.fit_uncertainty">
+<span class="sig-name descname"><span class="pre">fit_uncertainty</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.models.CovarianceRegressor.fit_uncertainty" title="Permalink to this definition"></a></dt>
+<dd><p>Fit just the uncertainties (if these need additional fitting beyond
+just the model)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.models.CovarianceRegressor.initialize">
+<span class="sig-name descname"><span class="pre">initialize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">init_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_input</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.models.CovarianceRegressor.initialize" title="Permalink to this definition"></a></dt>
+<dd><p>(Re)initializes the model weights. If <code class="xref py py-obj docutils literal notranslate"><span class="pre">self.reinitialize</span></code> is True, this
+should be called at the start of every <a class="reference internal" href="#alien.models.CovarianceRegressor.fit" title="alien.models.CovarianceRegressor.fit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit()</span></code></a>, and this should be
+the default behaviour of <a class="reference internal" href="#alien.models.CovarianceRegressor.fit" title="alien.models.CovarianceRegressor.fit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.models.CovarianceRegressor.load">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.models.CovarianceRegressor.load" title="Permalink to this definition"></a></dt>
+<dd><p>Loads a model. This particular implementation only works if <code class="xref py py-obj docutils literal notranslate"><span class="pre">save(path)</span></code> hasn’t
+been overloaded.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="alien.models.CovarianceRegressor.ndim">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ndim</span></span><a class="headerlink" href="#alien.models.CovarianceRegressor.ndim" title="Permalink to this definition"></a></dt>
+<dd><p>The number of axes in the feature space. Equal to <code class="xref py py-obj docutils literal notranslate"><span class="pre">len(self.shape)</span></code>.
+Most commonly equal to 1. If training data have been specified, then
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">self.ndim</span> <span class="pre">==</span> <span class="pre">X.ndim</span> <span class="pre">-</span> <span class="pre">1</span></code>.</p>
+<p>This property is used by any methods which use the <code class="xref py py-obj docutils literal notranslate"><span class="pre">&#64;flatten_batch</span></code>
+decorator.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.models.CovarianceRegressor.predict">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_std_dev</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.models.CovarianceRegressor.predict" title="Permalink to this definition"></a></dt>
+<dd><p>Applies the model to input(s) X (with the last self.ndim
+axes corresponding to each sample), and returns prediction(s).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>return_std_dev</strong> – if True, returns a tuple <code class="xref py py-obj docutils literal notranslate"><span class="pre">(prediction,</span> <span class="pre">std_dev)</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.models.CovarianceRegressor.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.models.CovarianceRegressor.save" title="Permalink to this definition"></a></dt>
+<dd><p>Saves the model. May well be overloaded by subclasses, if they contain
+non-picklable components (or pickling would be inefficient).</p>
+<p>For any subclass, the <a class="reference internal" href="#alien.models.CovarianceRegressor.save" title="alien.models.CovarianceRegressor.save"><code class="xref py py-meth docutils literal notranslate"><span class="pre">save()</span></code></a> and <a class="reference internal" href="#alien.models.CovarianceRegressor.load" title="alien.models.CovarianceRegressor.load"><code class="xref py py-meth docutils literal notranslate"><span class="pre">load()</span></code></a> methods should be
+compatible with each other.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="alien.models.CovarianceRegressor.shape">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">shape</span></span><a class="headerlink" href="#alien.models.CovarianceRegressor.shape" title="Permalink to this definition"></a></dt>
+<dd><p>The shape of the feature space. Can either be specified directly,
+or inferred from training data, in which case
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">self.shape</span> <span class="pre">==</span> <span class="pre">X.shape[1:]</span></code>, i.e., the first (batch) dimension is
+dropped.</p>
+<p>This property is used by any methods which use the <code class="xref py py-obj docutils literal notranslate"><span class="pre">&#64;flatten_batch</span></code>
+decorator.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="alien.models.EnsembleRegressor">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">alien.models.</span></span><span class="sig-name descname"><span class="pre">EnsembleRegressor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/models/models.html#EnsembleRegressor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.models.EnsembleRegressor" title="Permalink to this definition"></a></dt>
+<dd><p>Inherit from EnsembleRegressor if you wish to compute ensembles directly.
+This class provides covariance and prediction for free, given these
+ensembles of predictions.</p>
+<p>Subclasses must implement one of <a class="reference internal" href="#alien.models.EnsembleRegressor.predict_ensemble" title="alien.models.EnsembleRegressor.predict_ensemble"><code class="xref py py-meth docutils literal notranslate"><span class="pre">predict_ensemble()</span></code></a> or
+<a class="reference internal" href="#alien.models.EnsembleRegressor.predict_samples" title="alien.models.EnsembleRegressor.predict_samples"><code class="xref py py-meth docutils literal notranslate"><span class="pre">predict_samples()</span></code></a>.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.models.EnsembleRegressor.predict">
+<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_std_dev</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/models/models.html#EnsembleRegressor.predict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.models.EnsembleRegressor.predict" title="Permalink to this definition"></a></dt>
+<dd><p>Applies the model to input(s) X (with the last self.ndim
+axes corresponding to each sample), and returns prediction(s).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>return_std_dev</strong> – if True, returns a tuple <code class="xref py py-obj docutils literal notranslate"><span class="pre">(prediction,</span> <span class="pre">std_dev)</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.models.EnsembleRegressor.predict_ensemble">
+<span class="sig-name descname"><span class="pre">predict_ensemble</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/models/models.html#EnsembleRegressor.predict_ensemble"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.models.EnsembleRegressor.predict_ensemble" title="Permalink to this definition"></a></dt>
+<dd><p>Returns an ensemble of predictions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>multiple</strong> – standard deviation should be this much larger</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.models.EnsembleRegressor.predict_samples">
+<span class="sig-name descname"><span class="pre">predict_samples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/models/models.html#EnsembleRegressor.predict_samples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.models.EnsembleRegressor.predict_samples" title="Permalink to this definition"></a></dt>
+<dd><p>Makes a prediction for for the batch X, randomly selected from
+this model’s posterior distribution. Gives an
+ensemble of predictions, with shape <code class="xref py py-obj docutils literal notranslate"><span class="pre">(len(X),</span> <span class="pre">n)</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.models.EnsembleRegressor.covariance_ensemble">
+<span class="sig-name descname"><span class="pre">covariance_ensemble</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_SupportsArray</span><span class="p"><span class="pre">[</span></span><span class="pre">dtype</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">_NestedSequence</span><span class="p"><span class="pre">[</span></span><span class="pre">_SupportsArray</span><span class="p"><span class="pre">[</span></span><span class="pre">dtype</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">complex</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bytes</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">_NestedSequence</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">complex</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bytes</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/models/models.html#EnsembleRegressor.covariance_ensemble"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.models.EnsembleRegressor.covariance_ensemble" title="Permalink to this definition"></a></dt>
+<dd><p>Compute covariance from the ensemble of predictions</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.models.EnsembleRegressor.std_dev_ensemble">
+<span class="sig-name descname"><span class="pre">std_dev_ensemble</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/alien/models/models.html#EnsembleRegressor.std_dev_ensemble"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#alien.models.EnsembleRegressor.std_dev_ensemble" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the (epistemic) standard deviation of the model
+on input <code class="xref py py-obj docutils literal notranslate"><span class="pre">X</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.models.EnsembleRegressor.covariance">
+<span class="sig-name descname"><span class="pre">covariance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.models.EnsembleRegressor.covariance" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the covariance of the epistemic uncertainty between all
+rows of X. This is where memory bugs often appear, because of the
+large matrices involved.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.models.EnsembleRegressor.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reinitialize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fit_uncertainty</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.models.EnsembleRegressor.fit" title="Permalink to this definition"></a></dt>
+<dd><p>Fits the model to the given training data. If <code class="xref py py-obj docutils literal notranslate"><span class="pre">X</span></code> and <code class="xref py py-obj docutils literal notranslate"><span class="pre">y</span></code> are
+not specified, this method looks for <code class="xref py py-obj docutils literal notranslate"><span class="pre">self.X</span></code> and <code class="xref py py-obj docutils literal notranslate"><span class="pre">self.y</span></code>. If
+<a class="reference internal" href="#alien.models.EnsembleRegressor.fit" title="alien.models.EnsembleRegressor.fit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit()</span></code></a> finds an <code class="xref py py-obj docutils literal notranslate"><span class="pre">X</span></code> but not a <code class="xref py py-obj docutils literal notranslate"><span class="pre">y</span></code>, it treats <code class="xref py py-obj docutils literal notranslate"><span class="pre">X</span></code> as a
+combined dataset <code class="xref py py-obj docutils literal notranslate"><span class="pre">data</span></code>, and then uses <code class="xref py py-obj docutils literal notranslate"><span class="pre">X,</span> <span class="pre">y</span> <span class="pre">=</span> <span class="pre">data.X,</span> <span class="pre">data.y</span></code>.
+If we can’t find <code class="xref py py-obj docutils literal notranslate"><span class="pre">data.X</span></code> and <code class="xref py py-obj docutils literal notranslate"><span class="pre">data.y</span></code>, we instead use
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">X,</span> <span class="pre">y</span> <span class="pre">=</span> <span class="pre">data[:-1],</span> <span class="pre">data[-1]</span></code>.</p>
+<p><a class="reference internal" href="#alien.models.EnsembleRegressor.fit" title="alien.models.EnsembleRegressor.fit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit()</span></code></a> should also fit any accompanying uncertainty model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>reinitialize</strong> – If <code class="xref py py-obj docutils literal notranslate"><span class="pre">True</span></code>, reinitializes model weights before
+fitting. If <code class="xref py py-obj docutils literal notranslate"><span class="pre">False</span></code>, starts training from previous weight values.
+If not specified, uses <code class="xref py py-obj docutils literal notranslate"><span class="pre">self.reinitialize</span></code>)</p></li>
+<li><p><strong>fit_uncertainty</strong> – If <code class="xref py py-obj docutils literal notranslate"><span class="pre">True</span></code>, a call to <a class="reference internal" href="#alien.models.EnsembleRegressor.fit" title="alien.models.EnsembleRegressor.fit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit()</span></code></a> will also call
+<a class="reference internal" href="#alien.models.EnsembleRegressor.fit_uncertainty" title="alien.models.EnsembleRegressor.fit_uncertainty"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit_uncertainty()</span></code></a>. Defaults to <code class="xref py py-obj docutils literal notranslate"><span class="pre">True</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.models.EnsembleRegressor.fit_model">
+<span class="sig-name descname"><span class="pre">fit_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.models.EnsembleRegressor.fit_model" title="Permalink to this definition"></a></dt>
+<dd><p>Fit just the model component, and not the uncertainties (if these are
+computed separately)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.models.EnsembleRegressor.fit_uncertainty">
+<span class="sig-name descname"><span class="pre">fit_uncertainty</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.models.EnsembleRegressor.fit_uncertainty" title="Permalink to this definition"></a></dt>
+<dd><p>Fit just the uncertainties (if these need additional fitting beyond
+just the model)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.models.EnsembleRegressor.initialize">
+<span class="sig-name descname"><span class="pre">initialize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">init_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_input</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.models.EnsembleRegressor.initialize" title="Permalink to this definition"></a></dt>
+<dd><p>(Re)initializes the model weights. If <code class="xref py py-obj docutils literal notranslate"><span class="pre">self.reinitialize</span></code> is True, this
+should be called at the start of every <a class="reference internal" href="#alien.models.EnsembleRegressor.fit" title="alien.models.EnsembleRegressor.fit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit()</span></code></a>, and this should be
+the default behaviour of <a class="reference internal" href="#alien.models.EnsembleRegressor.fit" title="alien.models.EnsembleRegressor.fit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.models.EnsembleRegressor.load">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.models.EnsembleRegressor.load" title="Permalink to this definition"></a></dt>
+<dd><p>Loads a model. This particular implementation only works if <code class="xref py py-obj docutils literal notranslate"><span class="pre">save(path)</span></code> hasn’t
+been overloaded.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="alien.models.EnsembleRegressor.ndim">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ndim</span></span><a class="headerlink" href="#alien.models.EnsembleRegressor.ndim" title="Permalink to this definition"></a></dt>
+<dd><p>The number of axes in the feature space. Equal to <code class="xref py py-obj docutils literal notranslate"><span class="pre">len(self.shape)</span></code>.
+Most commonly equal to 1. If training data have been specified, then
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">self.ndim</span> <span class="pre">==</span> <span class="pre">X.ndim</span> <span class="pre">-</span> <span class="pre">1</span></code>.</p>
+<p>This property is used by any methods which use the <code class="xref py py-obj docutils literal notranslate"><span class="pre">&#64;flatten_batch</span></code>
+decorator.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.models.EnsembleRegressor.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.models.EnsembleRegressor.save" title="Permalink to this definition"></a></dt>
+<dd><p>Saves the model. May well be overloaded by subclasses, if they contain
+non-picklable components (or pickling would be inefficient).</p>
+<p>For any subclass, the <a class="reference internal" href="#alien.models.EnsembleRegressor.save" title="alien.models.EnsembleRegressor.save"><code class="xref py py-meth docutils literal notranslate"><span class="pre">save()</span></code></a> and <a class="reference internal" href="#alien.models.EnsembleRegressor.load" title="alien.models.EnsembleRegressor.load"><code class="xref py py-meth docutils literal notranslate"><span class="pre">load()</span></code></a> methods should be
+compatible with each other.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="alien.models.EnsembleRegressor.shape">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">shape</span></span><a class="headerlink" href="#alien.models.EnsembleRegressor.shape" title="Permalink to this definition"></a></dt>
+<dd><p>The shape of the feature space. Can either be specified directly,
+or inferred from training data, in which case
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">self.shape</span> <span class="pre">==</span> <span class="pre">X.shape[1:]</span></code>, i.e., the first (batch) dimension is
+dropped.</p>
+<p>This property is used by any methods which use the <code class="xref py py-obj docutils literal notranslate"><span class="pre">&#64;flatten_batch</span></code>
+decorator.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="alien.models.EnsembleRegressor.std_dev">
+<span class="sig-name descname"><span class="pre">std_dev</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#alien.models.EnsembleRegressor.std_dev" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the (epistemic) standard deviation of the model
+on input <code class="xref py py-obj docutils literal notranslate"><span class="pre">X</span></code>.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="installation.html" class="btn btn-neutral float-left" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="alien.selection.html" class="btn btn-neutral float-right" title="alien.selection" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

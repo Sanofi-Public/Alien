@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>alien.models.pytorch.last_layer &mdash; ALIEN 1.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            ALIEN
+          </a>
+              <div class="version">
+                1.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../active_learning.html">What is active learning?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../alien.models.html">alien.models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../alien.selection.html">alien.selection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../alien.benchmarks.html">alien.benchmarks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../alien.data.html">alien.data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../alien.sample_generation.html">alien.sample_generation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">ALIEN</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">alien.models.pytorch.last_layer</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for alien.models.pytorch.last_layer</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Model wrapper for last layer linearization.&quot;&quot;&quot;</span>
+
+<span class="c1"># The code in this file is largely borrowed from the Laplace Redux</span>
+<span class="c1"># implementation by Alex Immer:</span>
+<span class="c1">#</span>
+<span class="c1"># https://github.com/AlexImmer/Laplace/blob/main/laplace/utils/feature_extractor.py</span>
+<span class="c1">#</span>
+<span class="c1"># That code is under the MIT License, which we provide a copy of here, in</span>
+<span class="c1"># accordance with the license requirements. Note, the rest of the Active</span>
+<span class="c1"># Learning SDK is *not* provided under the MIT license.</span>
+<span class="c1">#</span>
+<span class="c1"># MIT License</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (c) 2021 Alex Immer</span>
+<span class="c1">#</span>
+<span class="c1"># Permission is hereby granted, free of charge, to any person obtaining a copy</span>
+<span class="c1"># of this software and associated documentation files (the &quot;Software&quot;), to deal</span>
+<span class="c1"># in the Software without restriction, including without limitation the rights</span>
+<span class="c1"># to use, copy, modify, merge, publish, distribute, sublicense, and/or sell</span>
+<span class="c1"># copies of the Software, and to permit persons to whom the Software is</span>
+<span class="c1"># furnished to do so, subject to the following conditions:</span>
+<span class="c1">#</span>
+<span class="c1"># The above copyright notice and this permission notice shall be included in all</span>
+<span class="c1"># copies or substantial portions of the Software.</span>
+<span class="c1">#</span>
+<span class="c1"># THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
+<span class="c1"># IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,</span>
+<span class="c1"># FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE</span>
+<span class="c1"># AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER</span>
+<span class="c1"># LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,</span>
+<span class="c1"># OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE</span>
+<span class="c1"># SOFTWARE.</span>
+
+<span class="kn">from</span> <span class="nn">numpy.typing</span> <span class="kn">import</span> <span class="n">ArrayLike</span>
+
+<span class="kn">from</span> <span class="nn">...decorators</span> <span class="kn">import</span> <span class="n">flatten_batch</span>
+<span class="kn">from</span> <span class="nn">..linear</span> <span class="kn">import</span> <span class="n">LastLayerLinearizableRegressor</span>
+
+<span class="c1"># pylint: disable=import-outside-toplevel</span>
+
+
+<div class="viewcode-block" id="LastLayerPytorchLinearization"><a class="viewcode-back" href="../../../../alien.models.pytorch.html#alien.models.pytorch.last_layer.LastLayerPytorchLinearization">[docs]</a><span class="k">class</span> <span class="nc">LastLayerPytorchLinearization</span><span class="p">(</span><span class="n">LastLayerLinearizableRegressor</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; &quot;Last layer linearization for Pytorch-based models.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">X</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_layer</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_features</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_layer_name</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="LastLayerPytorchLinearization.predict_with_embedding"><a class="viewcode-back" href="../../../../alien.models.pytorch.html#alien.models.pytorch.last_layer.LastLayerPytorchLinearization.predict_with_embedding">[docs]</a>    <span class="nd">@flatten_batch</span>
+    <span class="k">def</span> <span class="nf">predict_with_embedding</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Forward pass which returns the output of the penultimate layer along</span>
+<span class="sd">        with the output of the last layer. If the last layer is not known yet,</span>
+<span class="sd">        it will be determined when this function is called for the first time.</span>
+
+<span class="sd">        :param X: one batch of data to use as input for the forward pass</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_layer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># if this is the first forward pass and last layer is unknown</span>
+            <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_last_layer</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># if last layer is already known</span>
+            <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+        <span class="n">features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_features</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_last_layer_name</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">out</span><span class="p">,</span> <span class="n">features</span></div>
+
+<div class="viewcode-block" id="LastLayerPytorchLinearization.last_layer_embedding"><a class="viewcode-back" href="../../../../alien.models.pytorch.html#alien.models.pytorch.last_layer.LastLayerPytorchLinearization.last_layer_embedding">[docs]</a>    <span class="k">def</span> <span class="nf">last_layer_embedding</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict_with_embedding</span><span class="p">(</span><span class="n">X</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="LastLayerPytorchLinearization.linearization"><a class="viewcode-back" href="../../../../alien.models.pytorch.html#alien.models.pytorch.last_layer.LastLayerPytorchLinearization.linearization">[docs]</a>    <span class="k">def</span> <span class="nf">linearization</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_layer</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_layer</span><span class="o">.</span><span class="n">bias</span></div>
+
+<div class="viewcode-block" id="LastLayerPytorchLinearization.set_last_layer"><a class="viewcode-back" href="../../../../alien.models.pytorch.html#alien.models.pytorch.last_layer.LastLayerPytorchLinearization.set_last_layer">[docs]</a>    <span class="k">def</span> <span class="nf">set_last_layer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">last_layer_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the last layer of the model by its name. This sets the forward</span>
+<span class="sd">        hook to get the output of the penultimate layer.</span>
+
+<span class="sd">        :param last_layer_name: the name of the last layer (fixed in</span>
+<span class="sd">            `model.named_modules()`).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">import</span> <span class="nn">torch</span>
+
+        <span class="c1"># set last_layer attributes and check if it is linear</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_layer_name</span> <span class="o">=</span> <span class="n">last_layer_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_layer</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">named_modules</span><span class="p">())[</span><span class="n">last_layer_name</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">last_layer</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Use model with a linear last layer.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># set forward hook to extract features in future forward passes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_layer</span><span class="o">.</span><span class="n">register_forward_hook</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_hook</span><span class="p">(</span><span class="n">last_layer_name</span><span class="p">))</span></div>
+
+    <span class="k">def</span> <span class="nf">_get_hook</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">hook</span><span class="p">(</span><span class="n">_</span><span class="p">,</span> <span class="nb">input</span><span class="p">,</span> <span class="n">__</span><span class="p">):</span>
+            <span class="c1"># only accepts one input (expects linear layer)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_features</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="nb">input</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">hook</span>
+
+<div class="viewcode-block" id="LastLayerPytorchLinearization.find_last_layer"><a class="viewcode-back" href="../../../../alien.models.pytorch.html#alien.models.pytorch.last_layer.LastLayerPytorchLinearization.find_last_layer">[docs]</a>    <span class="k">def</span> <span class="nf">find_last_layer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Automatically determines the last layer of the model with one</span>
+<span class="sd">        forward pass. It assumes that the last layer is the same for every</span>
+<span class="sd">        forward pass and that it is an instance of `torch.nn.Linear`.</span>
+<span class="sd">        Might not work with every architecture, but is tested with all PyTorch</span>
+<span class="sd">        torchvision classification models (besides SqueezeNet, which has no</span>
+<span class="sd">        linear last layer).</span>
+
+<span class="sd">        :param X: batch of samples used to find last layer.</span>
+
+<span class="sd">        :return: Returns the output of the forward pass, so as not to waste</span>
+<span class="sd">            computation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_layer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Last layer is already known.&quot;</span><span class="p">)</span>
+
+        <span class="n">act_out</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+        <span class="k">def</span> <span class="nf">get_act_hook</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+            <span class="k">def</span> <span class="nf">act_hook</span><span class="p">(</span><span class="n">_</span><span class="p">,</span> <span class="nb">input</span><span class="p">,</span> <span class="n">__</span><span class="p">):</span>
+                <span class="c1"># only accepts one input (expects linear layer)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">act_out</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="nb">input</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+                <span class="k">except</span> <span class="p">(</span><span class="ne">IndexError</span><span class="p">,</span> <span class="ne">AttributeError</span><span class="p">):</span>
+                    <span class="n">act_out</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="c1"># remove hook</span>
+                <span class="n">handles</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">remove</span><span class="p">()</span>
+
+            <span class="k">return</span> <span class="n">act_hook</span>
+
+        <span class="c1"># set hooks for all modules</span>
+        <span class="n">handles</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">module</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">named_modules</span><span class="p">():</span>
+            <span class="n">handles</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">module</span><span class="o">.</span><span class="n">register_forward_hook</span><span class="p">(</span><span class="n">get_act_hook</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+
+        <span class="c1"># check if model has more than one module</span>
+        <span class="c1"># (there might be pathological exceptions)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">handles</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The model only has one module.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># forward pass to find execution order</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+
+        <span class="c1"># find the last layer, store features, return output of forward pass</span>
+        <span class="n">keys</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">act_out</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">keys</span><span class="p">):</span>
+            <span class="n">layer</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">named_modules</span><span class="p">())[</span><span class="n">key</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">children</span><span class="p">()))</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">set_last_layer</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+                <span class="c1"># save features from first forward pass</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_features</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">act_out</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+                <span class="k">return</span> <span class="n">out</span>
+
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Something went wrong (all modules have children).&quot;</span><span class="p">)</span></div></div>
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>alien.classes &mdash; ALIEN 1.1.2 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            ALIEN
+          </a>
+              <div class="version">
+                1.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../active_learning.html">What is active learning?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../alien.models.html">alien.models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../alien.selection.html">alien.selection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../alien.benchmarks.html">alien.benchmarks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../alien.data.html">alien.data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../alien.sample_generation.html">alien.sample_generation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">ALIEN</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">alien.classes</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for alien.classes</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span><span class="p">,</span> <span class="n">wraps</span>
+<span class="kn">from</span> <span class="nn">inspect</span> <span class="kn">import</span> <span class="n">currentframe</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">final</span> <span class="k">as</span> <span class="n">weak_final</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">weak_final</span><span class="p">(</span><span class="n">fn</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">fn</span>
+
+
+<div class="viewcode-block" id="parent_locals"><a class="viewcode-back" href="../../alien.html#alien.classes.parent_locals">[docs]</a><span class="k">def</span> <span class="nf">parent_locals</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">currentframe</span><span class="p">()</span><span class="o">.</span><span class="n">f_back</span><span class="o">.</span><span class="n">f_back</span><span class="o">.</span><span class="n">f_locals</span></div>
+
+
+<div class="viewcode-block" id="final"><a class="viewcode-back" href="../../alien.html#alien.classes.final">[docs]</a><span class="k">def</span> <span class="nf">final</span><span class="p">(</span><span class="n">fn</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Decorates a method, to prohibit subclasses from overriding it (unless the</span>
+<span class="sd">    overriding method is decorated with `@override`). This prohibition is</span>
+<span class="sd">    actually enforced (during subclass creation), unlike with python&#39;s</span>
+<span class="sd">    `typing.final` decorator, which is only used by external type checkers.</span>
+<span class="sd">    Decorating with this version of `final` does also apply `typing.final`,</span>
+<span class="sd">    so no need to use both.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">exec</span><span class="p">(</span><span class="n">injected_code</span><span class="p">,</span> <span class="n">parent_locals</span><span class="p">(),</span> <span class="nb">globals</span><span class="p">())</span>
+    <span class="n">fn</span><span class="o">.</span><span class="n">__final__</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">return</span> <span class="n">weak_final</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="override"><a class="viewcode-back" href="../../alien.html#alien.classes.override">[docs]</a><span class="k">def</span> <span class="nf">override</span><span class="p">(</span><span class="n">fn</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Decorates a method to allow it to override `@final` methods.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">fn</span><span class="o">.</span><span class="n">__override__</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">return</span> <span class="n">fn</span></div>
+
+
+<div class="viewcode-block" id="init_subclass"><a class="viewcode-back" href="../../alien.html#alien.classes.init_subclass">[docs]</a><span class="k">def</span> <span class="nf">init_subclass</span><span class="p">(</span><span class="n">subclass</span><span class="p">,</span> <span class="n">superclass</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span> <span class="c1"># NOSONAR</span>
+
+    <span class="k">for</span> <span class="n">f_super</span> <span class="ow">in</span> <span class="n">superclass</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+
+        <span class="k">if</span> <span class="n">groups</span> <span class="o">:=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">f_super</span><span class="p">,</span> <span class="s1">&#39;__abstract_group__&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">groups</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">subclass</span><span class="p">,</span> <span class="s1">&#39;__abstract_req__&#39;</span><span class="p">):</span>
+                    <span class="n">subclass</span><span class="o">.</span><span class="n">__abstract_req__</span> <span class="o">=</span> <span class="p">{</span><span class="n">group</span><span class="p">:</span> <span class="n">abstract_req</span><span class="p">[</span><span class="n">group</span><span class="p">]}</span>
+                    <span class="n">old_init</span> <span class="o">=</span> <span class="n">subclass</span><span class="o">.</span><span class="fm">__init__</span>
+                    
+                    <span class="nd">@wraps</span><span class="p">(</span><span class="n">subclass</span><span class="o">.</span><span class="fm">__init__</span><span class="p">)</span>
+                    <span class="k">def</span> <span class="nf">abstract_init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+                        <span class="n">old_init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                        <span class="k">for</span> <span class="n">group</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">subclass</span><span class="o">.</span><span class="n">__abstract_req__</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                            <span class="n">k</span> <span class="o">=</span> <span class="n">n</span>
+                            <span class="k">for</span> <span class="n">meth_name</span> <span class="ow">in</span> <span class="n">abstract_groups</span><span class="p">[</span><span class="n">group</span><span class="p">]:</span>
+                                <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">meth_name</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">superclass</span><span class="p">,</span> <span class="n">meth_name</span><span class="p">)</span><span class="o">.</span><span class="fm">__get__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                                    <span class="n">k</span> <span class="o">-=</span> <span class="mi">1</span>
+                            <span class="k">if</span> <span class="n">k</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Subclasses of </span><span class="si">{</span><span class="n">superclass_name</span><span class="si">}</span><span class="s2"> must implement at least </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2"> of &quot;</span>
+                                    <span class="o">+</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">abstract_groups</span><span class="p">[</span><span class="n">group</span><span class="p">]))</span>
+
+                    <span class="n">subclass</span><span class="o">.</span><span class="fm">__init__</span> <span class="o">=</span> <span class="n">abstract_init</span>
+                
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">subclass</span><span class="o">.</span><span class="n">__abstract_req__</span><span class="p">[</span><span class="n">group</span><span class="p">]</span> <span class="o">=</span> <span class="n">abstract_req</span><span class="p">[</span><span class="n">group</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">f_super</span><span class="p">,</span> <span class="s2">&quot;__final__&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="k">for</span> <span class="bp">cls</span> <span class="ow">in</span> <span class="n">subclass</span><span class="o">.</span><span class="vm">__mro__</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">cls</span> <span class="o">==</span> <span class="n">superclass</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Class `</span><span class="si">{</span><span class="n">subclass</span><span class="o">.</span><span class="vm">__qualname__</span><span class="si">}</span><span class="s2">` cannot override @final &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;method `</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">` (defined in class `</span><span class="si">{</span><span class="n">superclass_name</span><span class="si">}</span><span class="s2">`). Use @override &quot;</span>
+                        <span class="s2">&quot;decorator if you must.&quot;</span>
+                    <span class="p">)</span>
+                <span class="k">elif</span> <span class="nb">getattr</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="s2">&quot;__override__&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+                    <span class="k">break</span></div>
+
+
+<div class="viewcode-block" id="abstract_group"><a class="viewcode-back" href="../../alien.html#alien.classes.abstract_group">[docs]</a><span class="k">def</span> <span class="nf">abstract_group</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Decorates a group of methods so that at least `n` (typically 1)</span>
+<span class="sd">    of them must be overriden by a subclass. Each group is determined</span>
+<span class="sd">    by its `id`, which must be a hashable key.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">abstract_decorator</span><span class="p">(</span><span class="n">fn</span><span class="p">):</span>
+        <span class="k">if</span> <span class="s1">&#39;__abstract_group__&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">fn</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">:</span>
+            <span class="n">fn</span><span class="o">.</span><span class="n">__abstract_group__</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">fn</span><span class="o">.</span><span class="n">__abstract_group__</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">abstract_groups</span><span class="p">:</span>
+            <span class="n">abstract_groups</span><span class="p">[</span><span class="nb">id</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">abstract_groups</span><span class="p">[</span><span class="nb">id</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">fn</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+        <span class="n">abstract_req</span><span class="p">[</span><span class="nb">id</span><span class="p">]</span> <span class="o">=</span> <span class="n">n</span>
+
+        <span class="n">exec</span><span class="p">(</span><span class="n">injected_code</span><span class="p">,</span> <span class="n">parent_locals</span><span class="p">(),</span> <span class="nb">globals</span><span class="p">())</span>
+
+        <span class="k">return</span> <span class="n">fn</span>
+
+    <span class="k">return</span> <span class="n">abstract_decorator</span></div>
+
+
+<span class="n">abstract_groups</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">abstract_req</span> <span class="o">=</span> <span class="p">{}</span>
+
+
+<span class="n">injected_code</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">if &quot;__alien_abstract_class__&quot; not in locals():</span>
+<span class="s2">    __alien_abstract_class__ = True</span>
+<span class="s2">    old_init_name = &quot;__init_subclass_old_abstract_group__&quot;</span>
+
+<span class="s2">    old_init = locals().get(&quot;__init_subclass__&quot;, lambda *a, **k : None) </span>
+<span class="s2">    locals()[old_init_name] = old_init</span>
+<span class="s2">    def __init_subclass__(cls, old_init=old_init, **kwargs):</span>
+<span class="s2">        old_init(cls, **kwargs)</span>
+<span class="s2">        init_subclass(cls, superclass=__class__, **kwargs)</span>
+<span class="s2">&quot;&quot;&quot;</span>     
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

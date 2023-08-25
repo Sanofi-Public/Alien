@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>alien.benchmarks.retrospective &mdash; ALIEN 1.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            ALIEN
+          </a>
+              <div class="version">
+                1.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../active_learning.html">What is active learning?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../alien.models.html">alien.models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../alien.selection.html">alien.selection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../alien.benchmarks.html">alien.benchmarks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../alien.data.html">alien.data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../alien.sample_generation.html">alien.sample_generation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">ALIEN</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">alien.benchmarks.retrospective</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for alien.benchmarks.retrospective</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">..data</span> <span class="kn">import</span> <span class="n">DictDataset</span>
+<span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">shift_seed</span>
+<span class="kn">from</span> <span class="nn">.oracle</span> <span class="kn">import</span> <span class="n">SetOracle</span>
+
+
+<div class="viewcode-block" id="run_experiments"><a class="viewcode-back" href="../../../alien.benchmarks.html#alien.benchmarks.retrospective.run_experiments">[docs]</a><span class="k">def</span> <span class="nf">run_experiments</span><span class="p">(</span>
+    <span class="n">X</span><span class="p">,</span>
+    <span class="n">y</span><span class="p">,</span>
+    <span class="n">model</span><span class="p">,</span>
+    <span class="n">runs_dir</span><span class="p">,</span>
+    <span class="n">overwrite_old_runs</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">n_initial</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">batch_size</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+    <span class="n">num_samples</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">),</span>
+    <span class="n">selector</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>  <span class="c1"># &#39;covariance&#39;, &#39;random&#39;, &#39;expected improvement&#39;/&#39;ei&#39;, &#39;greedy&#39;</span>
+    <span class="n">selector_args</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">fit_args</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">n_runs</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="n">ids</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">save_ids</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">random_seed</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">split_seed</span><span class="o">=</span><span class="mi">421</span><span class="p">,</span>
+    <span class="n">test_size</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
+    <span class="n">timestamps</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">stop_samples</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">stop_rmse</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">stop_frac</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>  <span class="c1"># suggest .85,</span>
+    <span class="c1"># The following arguments are a bit odd, and best avoided</span>
+    <span class="n">peek_score</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># 0 if no peeking</span>
+    <span class="n">test_samples_x</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">test_samples_y</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :param runs_dir: directory to store the runs and results of this training (each run in</span>
+<span class="sd">        separate subdirectories)</span>
+<span class="sd">    :param n_initial: number of samples to randomly select for initial training data</span>
+<span class="sd">    :param batch_size: number of samples selected for batch</span>
+<span class="sd">    :param num_samples: number of samples (drawn from the sample pool X) to select from.</span>
+<span class="sd">        Default is inf, which takes all of the samples available in X.</span>
+<span class="sd">    :param selector: the selector to use for batch selection, either given</span>
+<span class="sd">        by one of the strings &#39;covariance&#39;, &#39;random&#39;, &#39;expected improvement&#39;/&#39;ei&#39;, &#39;greedy&#39;,</span>
+<span class="sd">        or passed as an actual SampleSelector instance. Defaults to &#39;covariance&#39;.</span>
+<span class="sd">    :param selector_args: a dictionary passed as kwargs to the selector constructor.</span>
+<span class="sd">        The following constructor arguments are already automatically included, and don&#39;t</span>
+<span class="sd">        need to be included in this dictionary:</span>
+<span class="sd">            model, labelled_samples, samples, num_samples, batch_size</span>
+<span class="sd">    :param fit_args: a dictionary passed as kwargs each time model.fit(...) is called.</span>
+<span class="sd">        Typically, this is model- or framework-specific; so, eg., different arguments would</span>
+<span class="sd">        be appropriate for pytorch models, DeepChem models, etc.</span>
+<span class="sd">    :param n_runs: the number of overall runs (each starting from</span>
+<span class="sd">        a random initial selection) to do (for averaging)</span>
+
+<span class="sd">    :param random_seed: random seed for most RNG generation</span>
+<span class="sd">    :param split_seed: random seed for shuffling and splitting of data</span>
+<span class="sd">    :param test_size: the size of the test/validation set to take from X,y.</span>
+<span class="sd">        If test_size &gt;= 1, then takes that many samples. if 0 &lt; test_size &lt; 1, takes</span>
+<span class="sd">        that fraction of the dataset size.</span>
+
+<span class="sd">    :param stop_samples: if this is not None, stops an experiment run when</span>
+<span class="sd">        this many samples are labelled. Defaults to None</span>
+<span class="sd">    :param stop_rmse: if this is not None, stops an experiment run when this</span>
+<span class="sd">        RMSE has been reached. Defaults to None</span>
+<span class="sd">    :param stop_frac: if this is not None, stops an experiment run when the</span>
+<span class="sd">        RMSE has moved this fraction of the way from the RMSE after the first</span>
+<span class="sd">        round to the RMSE trained on the whole dataset. We suggest something like</span>
+<span class="sd">        .85, if you want to use this feature. Defaults to None</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">selector</span><span class="p">,</span> <span class="n">selector_args</span><span class="p">,</span> <span class="n">fit_args</span> <span class="o">=</span> <span class="n">_args_init</span><span class="p">(</span><span class="n">selector</span><span class="p">,</span> <span class="n">selector_args</span><span class="p">,</span> <span class="n">fit_args</span><span class="p">)</span>
+
+    <span class="n">data</span> <span class="o">=</span> <span class="n">_data_init</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">ids</span><span class="o">=</span><span class="n">ids</span><span class="p">,</span> <span class="n">timestamps</span><span class="o">=</span><span class="n">timestamps</span><span class="p">)</span>
+    <span class="n">data_train</span><span class="p">,</span> <span class="n">test_samples</span> <span class="o">=</span> <span class="n">_get_train_test</span><span class="p">(</span>
+        <span class="n">data</span><span class="p">,</span> <span class="n">split_seed</span><span class="p">,</span> <span class="n">test_size</span><span class="p">,</span> <span class="n">test_samples_x</span><span class="o">=</span><span class="n">test_samples_x</span><span class="p">,</span> <span class="n">test_samples_y</span><span class="o">=</span><span class="n">test_samples_y</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">stop_samples</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="n">stop_samples</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">stop_samples</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data_train</span><span class="p">)</span> <span class="o">*</span> <span class="n">stop_samples</span>
+
+    <span class="k">if</span> <span class="n">stop_frac</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Fitting model to whole dataset, to determine stopping limit... &quot;</span><span class="p">,</span> <span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">data_train</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">data_train</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="o">**</span><span class="n">fit_args</span><span class="p">)</span>
+        <span class="n">final_rmse</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">test_samples</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">return_std_dev</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+                <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">test_samples</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Done.&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">final_rmse</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="n">n_initial</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">n_initial</span> <span class="o">=</span> <span class="n">batch_size</span>
+
+    <span class="n">n_0</span> <span class="o">=</span> <span class="n">_overwrite</span><span class="p">(</span><span class="n">runs_dir</span><span class="p">,</span> <span class="n">overwrite_old_runs</span><span class="p">)</span>
+
+    <span class="n">selector_args</span> <span class="o">=</span> <span class="n">selector_args</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">selector_args</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="n">model</span><span class="p">,</span> <span class="s2">&quot;batch_size&quot;</span><span class="p">:</span> <span class="n">batch_size</span><span class="p">,</span> <span class="s2">&quot;num_samples&quot;</span><span class="p">:</span> <span class="n">num_samples</span><span class="p">})</span>
+    <span class="n">selector</span> <span class="o">=</span> <span class="n">_get_selector</span><span class="p">(</span><span class="n">selector</span><span class="p">,</span> <span class="n">selector_args</span><span class="p">)</span>
+    <span class="n">first_seed</span> <span class="o">=</span> <span class="n">random_seed</span>
+
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_0</span><span class="p">,</span> <span class="n">n_0</span> <span class="o">+</span> <span class="n">n_runs</span><span class="p">):</span>
+        <span class="n">run_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">runs_dir</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;run_</span><span class="si">{</span><span class="n">n</span><span class="si">:</span><span class="s2">02d</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">run_dir</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">random_seed</span> <span class="o">=</span> <span class="n">shift_seed</span><span class="p">(</span><span class="n">first_seed</span><span class="p">,</span> <span class="n">n</span> <span class="o">*</span> <span class="mi">5</span><span class="p">)</span>
+
+        <span class="n">_run_retro_iter</span><span class="p">(</span>
+            <span class="n">n</span><span class="p">,</span>
+            <span class="n">run_dir</span><span class="p">,</span>
+            <span class="n">model</span><span class="p">,</span>
+            <span class="n">data_train</span><span class="p">,</span>
+            <span class="n">test_samples</span><span class="p">,</span>
+            <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
+            <span class="n">n_initial</span><span class="o">=</span><span class="n">n_initial</span><span class="p">,</span>
+            <span class="n">selector</span><span class="o">=</span><span class="n">selector</span><span class="p">,</span>
+            <span class="n">fit_args</span><span class="o">=</span><span class="n">fit_args</span><span class="p">,</span>
+            <span class="n">save_ids</span><span class="o">=</span><span class="n">save_ids</span><span class="p">,</span>
+            <span class="n">random_seed</span><span class="o">=</span><span class="n">random_seed</span><span class="p">,</span>
+            <span class="n">stop_samples</span><span class="o">=</span><span class="n">stop_samples</span><span class="p">,</span>
+            <span class="n">stop_rmse</span><span class="o">=</span><span class="n">stop_rmse</span><span class="p">,</span>
+            <span class="n">stop_frac</span><span class="o">=</span><span class="n">stop_frac</span><span class="p">,</span>
+            <span class="n">final_rmse</span><span class="o">=</span><span class="n">final_rmse</span><span class="p">,</span>
+            <span class="n">peek_score</span><span class="o">=</span><span class="n">peek_score</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">_run_retro_iter</span><span class="p">(</span> <span class="c1"># NOSONAR</span>
+    <span class="n">n</span><span class="p">,</span>
+    <span class="n">run_dir</span><span class="p">,</span>
+    <span class="n">model</span><span class="p">,</span>
+    <span class="n">unlabelled_samples</span><span class="p">,</span>
+    <span class="n">test_samples</span><span class="p">,</span>
+    <span class="n">batch_size</span><span class="p">,</span>
+    <span class="n">n_initial</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">selector</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">fit_args</span><span class="o">=</span><span class="p">{},</span> <span class="c1"># NOSONAR</span>
+    <span class="n">save_ids</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">random_seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">stop_samples</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">stop_rmse</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">stop_frac</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>  <span class="c1"># suggest .85,</span>
+    <span class="n">final_rmse</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">peek_score</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># 0 if no peeking</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper function to run an iteration of an experiment.&quot;&quot;&quot;</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">random_seed</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span><span class="n">init_seed</span><span class="o">=</span><span class="n">random_seed</span><span class="p">,</span> <span class="n">sample_input</span><span class="o">=</span><span class="n">test_samples</span><span class="o">.</span><span class="n">X</span><span class="p">[:</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="n">sample_pool</span> <span class="o">=</span> <span class="n">SetOracle</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">unlabelled_samples</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">random_seed</span><span class="o">=</span><span class="n">shift_seed</span><span class="p">(</span><span class="n">random_seed</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="n">initial_indices</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sample_pool</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="n">n_initial</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">labelled_samples</span> <span class="o">=</span> <span class="n">unlabelled_samples</span><span class="p">[</span><span class="n">initial_indices</span><span class="p">]</span>
+    <span class="n">sample_pool</span><span class="o">.</span><span class="n">remove_samples</span><span class="p">(</span><span class="n">labelled_samples</span><span class="p">)</span>
+
+    <span class="n">batch_ids</span> <span class="o">=</span> <span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">initial_indices</span><span class="p">)]</span>
+    <span class="k">if</span> <span class="n">save_ids</span><span class="p">:</span>
+        <span class="n">_save_ids</span><span class="p">(</span><span class="n">batch_ids</span><span class="p">,</span> <span class="n">run_dir</span><span class="p">)</span>
+
+    <span class="n">model</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">labelled_samples</span>
+    <span class="n">selector</span><span class="o">.</span><span class="n">labelled_samples</span> <span class="o">=</span> <span class="n">labelled_samples</span>
+    <span class="n">selector</span><span class="o">.</span><span class="n">samples</span> <span class="o">=</span> <span class="n">sample_pool</span>
+
+    <span class="kn">from</span> <span class="nn">.metrics</span> <span class="kn">import</span> <span class="n">RMSE</span><span class="p">,</span> <span class="n">Scatter</span><span class="p">,</span> <span class="n">TopScore</span>
+
+    <span class="n">scatter</span> <span class="o">=</span> <span class="n">Scatter</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">test</span><span class="o">=</span><span class="n">test_samples</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;test scatter&quot;</span><span class="p">,</span> <span class="n">errs</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="n">top_scores</span> <span class="o">=</span> <span class="n">TopScore</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;top scores&quot;</span><span class="p">,</span> <span class="n">file_path</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">run_dir</span><span class="si">}</span><span class="s2">/top_scores.pickle&quot;</span><span class="p">)</span>
+    <span class="n">rmse</span> <span class="o">=</span> <span class="n">RMSE</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;RMSE&quot;</span><span class="p">,</span> <span class="n">file_path</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">run_dir</span><span class="si">}</span><span class="s2">/RMSE.pickle&quot;</span><span class="p">,</span> <span class="n">scatter</span><span class="o">=</span><span class="n">scatter</span><span class="p">)</span>
+
+    <span class="n">round_</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">first_rmse</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">### Round </span><span class="si">{</span><span class="n">round_</span><span class="si">}</span><span class="s2"> (Run </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">) ###&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Model:    </span><span class="si">{</span><span class="n">model</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Selector: </span><span class="si">{</span><span class="n">selector</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">labelled_samples</span><span class="p">)</span><span class="si">}</span><span class="s2"> labelled samples&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">sample_pool</span><span class="p">)</span><span class="si">}</span><span class="s2"> samples remaining&quot;</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Training model...&quot;</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="o">**</span><span class="n">fit_args</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Computing metrics...&quot;</span><span class="p">)</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="n">labelled_samples</span><span class="o">.</span><span class="n">y</span>
+        <span class="k">if</span> <span class="n">peek_score</span><span class="p">:</span>
+            <span class="n">samples</span> <span class="o">=</span> <span class="n">sample_pool</span><span class="o">.</span><span class="n">generate_samples</span><span class="p">()</span>
+            <span class="n">preds</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
+            <span class="n">best</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">preds</span><span class="p">)[:</span><span class="o">-</span><span class="n">peek_score</span><span class="p">]</span>
+            <span class="n">labels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">labels</span><span class="p">,</span> <span class="n">samples</span><span class="o">.</span><span class="n">y</span><span class="p">))</span>
+
+        <span class="n">top_scores</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">labelled_samples</span><span class="p">),</span> <span class="n">labels</span><span class="o">=</span><span class="n">labels</span><span class="p">,</span> <span class="n">average_over</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+        <span class="n">top_scores</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+        <span class="n">scatter</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">samples</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">labelled_samples</span><span class="p">))</span>
+        <span class="n">scatter</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">run_dir</span><span class="si">}</span><span class="s2">/scatter_</span><span class="si">{</span><span class="n">round_</span><span class="si">:</span><span class="s2">02d</span><span class="si">}</span><span class="s2">.pickle&quot;</span><span class="p">)</span>
+        <span class="n">rmse</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
+        <span class="n">rmse</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">round_</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">first_rmse</span> <span class="o">=</span> <span class="n">rmse</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">_check_retro_break</span><span class="p">(</span>
+            <span class="n">round_</span><span class="p">,</span>
+            <span class="n">first_rmse</span><span class="p">,</span>
+            <span class="n">rmse</span><span class="p">,</span>
+            <span class="n">final_rmse</span><span class="p">,</span>
+            <span class="n">sample_pool</span><span class="p">,</span>
+            <span class="n">labelled_samples</span><span class="p">,</span>
+            <span class="n">stop_samples</span><span class="p">,</span>
+            <span class="n">stop_frac</span><span class="p">,</span>
+            <span class="n">stop_rmse</span><span class="p">,</span>
+        <span class="p">):</span>
+            <span class="k">break</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Selecting batch...&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sample_pool</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">batch_size</span><span class="p">:</span>
+            <span class="n">batch</span> <span class="o">=</span> <span class="n">sample_pool</span><span class="o">.</span><span class="n">generate_samples</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">batch</span> <span class="o">=</span> <span class="n">selector</span><span class="o">.</span><span class="n">select</span><span class="p">()</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Learning batch...&quot;</span><span class="p">)</span>
+        <span class="n">labelled_samples</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+        <span class="n">sample_pool</span><span class="o">.</span><span class="n">remove_samples</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+
+        <span class="n">batch_ids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">ids</span><span class="o">.</span><span class="n">data</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">save_ids</span><span class="p">:</span>
+            <span class="n">_save_ids</span><span class="p">(</span><span class="n">batch_ids</span><span class="p">,</span> <span class="n">run_dir</span><span class="p">)</span>
+
+        <span class="n">round_</span> <span class="o">+=</span> <span class="mi">1</span>
+
+
+<span class="k">def</span> <span class="nf">_save_ids</span><span class="p">(</span><span class="n">ids</span><span class="p">,</span> <span class="nb">dir</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">dir</span><span class="si">}</span><span class="s2">/batch_ids.json&quot;</span> <span class="k">if</span> <span class="n">filename</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+            <span class="s2">&quot;[</span><span class="se">\n</span><span class="s2">    [&quot;</span> <span class="o">+</span> <span class="s2">&quot;],</span><span class="se">\n</span><span class="s2">    [&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">b</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">ids</span>
+            <span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;]</span><span class="se">\n</span><span class="s2">]</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_get_selector</span><span class="p">(</span><span class="n">selector</span><span class="p">,</span> <span class="n">selector_args</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper function to spawn a selector.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">selector</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;expected improvement&quot;</span><span class="p">,</span> <span class="s2">&quot;ei&quot;</span><span class="p">}:</span>
+        <span class="kn">from</span> <span class="nn">..selection.expected_improvement</span> <span class="kn">import</span> <span class="n">ExpectedImprovementSelector</span>
+
+        <span class="n">selector</span> <span class="o">=</span> <span class="n">ExpectedImprovementSelector</span><span class="p">(</span><span class="o">**</span><span class="n">selector_args</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">selector</span> <span class="o">==</span> <span class="s2">&quot;covariance&quot;</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">..selection.covariance</span> <span class="kn">import</span> <span class="n">CovarianceSelector</span>
+
+        <span class="n">selector</span> <span class="o">=</span> <span class="n">CovarianceSelector</span><span class="p">(</span><span class="o">**</span><span class="n">selector_args</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">selector</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;bait&quot;</span><span class="p">,</span> <span class="s2">&quot;BAIT&quot;</span><span class="p">}:</span>
+        <span class="kn">from</span> <span class="nn">..selection.bait</span> <span class="kn">import</span> <span class="n">BAITSelector</span>
+
+        <span class="n">selector</span> <span class="o">=</span> <span class="n">BAITSelector</span><span class="p">(</span><span class="o">**</span><span class="n">selector_args</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">selector</span> <span class="o">==</span> <span class="s2">&quot;random&quot;</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">..selection.random</span> <span class="kn">import</span> <span class="n">RandomSelector</span>
+
+        <span class="n">selector</span> <span class="o">=</span> <span class="n">RandomSelector</span><span class="p">(</span><span class="o">**</span><span class="n">selector_args</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">selector</span> <span class="o">==</span> <span class="s2">&quot;greedy&quot;</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">..selection.greedy</span> <span class="kn">import</span> <span class="n">GreedySelector</span>
+
+        <span class="n">selector</span> <span class="o">=</span> <span class="n">GreedySelector</span><span class="p">(</span><span class="o">**</span><span class="n">selector_args</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">selector</span> <span class="o">==</span> <span class="s2">&quot;kmeans&quot;</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">..selection.kmeans</span> <span class="kn">import</span> <span class="n">KmeansSelector</span>
+
+        <span class="n">selector</span> <span class="o">=</span> <span class="n">KmeansSelector</span><span class="p">(</span><span class="o">**</span><span class="n">selector_args</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">selector</span> <span class="o">==</span> <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">..selection</span> <span class="kn">import</span> <span class="n">TimestampSelector</span>
+
+        <span class="n">selector</span> <span class="o">=</span> <span class="n">TimestampSelector</span><span class="p">(</span><span class="o">**</span><span class="n">selector_args</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">selector</span><span class="si">}</span><span class="s2">&#39; is an invalid choice of selector.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">selector</span>
+
+
+<span class="k">def</span> <span class="nf">_get_train_test</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">split_seed</span><span class="p">,</span> <span class="n">test_size</span><span class="p">,</span> <span class="n">test_samples_x</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">test_samples_y</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper function to get train-test split of the data.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">test_samples_x</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">shuffle</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">X</span><span class="p">))</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">split_seed</span><span class="p">)</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">shuffle</span><span class="p">)</span>
+        <span class="n">test_size</span> <span class="o">=</span> <span class="n">test_size</span> <span class="k">if</span> <span class="n">test_size</span> <span class="o">&gt;=</span> <span class="mi">1</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">X</span><span class="p">)</span> <span class="o">*</span> <span class="n">test_size</span><span class="p">)</span>
+        <span class="n">test_indices</span><span class="p">,</span> <span class="n">train_indices</span> <span class="o">=</span> <span class="n">shuffle</span><span class="p">[:</span><span class="n">test_size</span><span class="p">],</span> <span class="n">shuffle</span><span class="p">[</span><span class="n">test_size</span><span class="p">:]</span>
+
+        <span class="n">data_train</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">train_indices</span><span class="p">]</span>
+        <span class="n">test_samples</span> <span class="o">=</span> <span class="n">DictDataset</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;X&quot;</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">test_indices</span><span class="p">],</span>
+                <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">test_indices</span><span class="p">],</span>
+                <span class="s2">&quot;ids&quot;</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">ids</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">test_indices</span><span class="p">],</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">data_train</span> <span class="o">=</span> <span class="n">data</span>
+        <span class="n">test_samples</span> <span class="o">=</span> <span class="n">DictDataset</span><span class="p">({</span><span class="s2">&quot;X&quot;</span><span class="p">:</span> <span class="n">test_samples_x</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="n">test_samples_y</span><span class="p">})</span>
+    <span class="k">return</span> <span class="n">data_train</span><span class="p">,</span> <span class="n">test_samples</span>
+
+
+<span class="k">def</span> <span class="nf">_data_init</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">ids</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">timestamps</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper function to initialize the data object from samples.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">ids</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">))</span>
+    <span class="n">data_dict</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;X&quot;</span><span class="p">:</span> <span class="n">X</span><span class="p">,</span>
+        <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="n">y</span><span class="p">,</span>
+        <span class="s2">&quot;ids&quot;</span><span class="p">:</span> <span class="n">ids</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="n">timestamps</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">data_dict</span><span class="p">[</span><span class="s2">&quot;t&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">timestamps</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">DictDataset</span><span class="p">(</span><span class="n">data_dict</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">data</span>
+
+
+<span class="k">def</span> <span class="nf">_args_init</span><span class="p">(</span><span class="n">selector</span><span class="p">,</span> <span class="n">selector_args</span><span class="p">,</span> <span class="n">fit_args</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper function to initialize optional args in run_experiments.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">selector</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">selector</span> <span class="o">=</span> <span class="s2">&quot;covariance&quot;</span>
+    <span class="k">if</span> <span class="n">selector_args</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">selector_args</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="n">fit_args</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">fit_args</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">return</span> <span class="n">selector</span><span class="p">,</span> <span class="n">selector_args</span><span class="p">,</span> <span class="n">fit_args</span>
+
+
+<span class="k">def</span> <span class="nf">_overwrite</span><span class="p">(</span><span class="n">runs_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">overwrite_old_runs</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper function to overwrite old runs in run_experiments.&quot;&quot;&quot;</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">runs_dir</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">n_0</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="n">overwrite_old_runs</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">shutil</span>
+
+        <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">runs_dir</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">runs_dir</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">while</span> <span class="sa">f</span><span class="s2">&quot;run_</span><span class="si">{</span><span class="n">n_0</span><span class="si">:</span><span class="s2">02d</span><span class="si">}</span><span class="s2">&quot;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">runs_dir</span><span class="p">):</span>
+            <span class="n">n_0</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">n_0</span>
+
+
+<span class="k">def</span> <span class="nf">_check_retro_break</span><span class="p">(</span>
+    <span class="n">round_</span><span class="p">,</span>
+    <span class="n">first_rmse</span><span class="p">,</span>
+    <span class="n">rmse</span><span class="p">,</span>
+    <span class="n">final_rmse</span><span class="p">,</span>
+    <span class="n">sample_pool</span><span class="p">,</span>
+    <span class="n">labelled_samples</span><span class="p">,</span>
+    <span class="n">stop_samples</span><span class="p">,</span>
+    <span class="n">stop_frac</span><span class="p">,</span>
+    <span class="n">stop_rmse</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper function to check whether to break experiment loop.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sample_pool</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Ending run because we&#39;ve selected the whole dataset&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">if</span> <span class="n">stop_samples</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">labelled_samples</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">stop_samples</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ending run because we&#39;ve reached limit of </span><span class="si">{</span><span class="n">stop_samples</span><span class="si">}</span><span class="s2"> samples.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">if</span> <span class="n">stop_frac</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="p">(</span><span class="n">first_rmse</span> <span class="o">-</span> <span class="n">rmse</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">&gt;=</span> <span class="n">stop_frac</span> <span class="o">*</span> <span class="p">(</span>
+        <span class="n">first_rmse</span> <span class="o">-</span> <span class="n">final_rmse</span>
+    <span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Ending run because RMSE is close enough to final RMSE.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">if</span> <span class="n">stop_rmse</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">rmse</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">stop_rmse</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Ending run because RMSE is better than threshold.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">return</span> <span class="kc">False</span>
+
+
+<span class="c1"># I was going to create a command-line interface, with argument parser, but I</span>
+<span class="c1"># am busy and am deprioritizing it</span>
+
+<span class="c1"># def main():</span>
+<span class="c1">#    from argparse import ArgumentParser</span>
+<span class="c1">#    parser = ArgumentParser()</span>
+<span class="c1">##    parser.add_argument(&#39;--dir&#39;, &#39;-d&#39;,</span>
+<span class="c1">#    initial_samples = 20,</span>
+<span class="c1">#    batch_size = 20,</span>
+<span class="c1">#    num_samples = float(&#39;inf&#39;),</span>
+<span class="c1">#    selector = &#39;greedy&#39;, # &#39;random&#39;, &#39;expected improvement&#39;/&#39;ei&#39;, &#39;covariance&#39;, &#39;greedy&#39;</span>
+<span class="c1">#    n_runs = 10,</span>
+<span class="c1">#</span>
+<span class="c1">#    random_seed = 1,</span>
+<span class="c1">#    split_seed = 421,</span>
+<span class="c1">#    test_size = .2,</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

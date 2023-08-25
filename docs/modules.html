@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>alien &mdash; ALIEN 1.1.2 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            ALIEN
+          </a>
+              <div class="version">
+                1.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="active_learning.html">What is active learning?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="alien.models.html">alien.models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="alien.selection.html">alien.selection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="alien.benchmarks.html">alien.benchmarks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="alien.data.html">alien.data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="alien.sample_generation.html">alien.sample_generation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">ALIEN</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">alien</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/modules.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="alien">
+<h1>alien<a class="headerlink" href="#alien" title="Permalink to this heading"></a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="alien.html">alien package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="alien.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="alien.benchmarks.html">alien.benchmarks</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="alien.benchmarks.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="alien.benchmarks.html#module-alien.benchmarks.metrics">alien.benchmarks.metrics module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="alien.benchmarks.html#module-alien.benchmarks.oracle">alien.benchmarks.oracle module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="alien.benchmarks.html#module-alien.benchmarks.retrospective">alien.benchmarks.retrospective module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="alien.benchmarks.html#module-alien.benchmarks.uncertainty_metrics">alien.benchmarks.uncertainty_metrics module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="alien.benchmarks.html#module-alien.benchmarks">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="alien.data.html">alien.data</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="alien.data.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="alien.data.html#module-alien.data.dataset">alien.data.dataset module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="alien.data.html#module-alien.data.deepchem">alien.data.deepchem module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="alien.data.html#module-0">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="alien.models.html">alien.models</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="alien.models.html#deep-learning-models">Deep learning models</a></li>
+<li class="toctree-l4"><a class="reference internal" href="alien.models.html#how-to-choose">How to choose?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="alien.models.html#gradient-boosting-models">Gradient boosting models</a></li>
+<li class="toctree-l4"><a class="reference internal" href="alien.models.html#other-models">Other models</a></li>
+<li class="toctree-l4"><a class="reference internal" href="alien.models.html#abstract-base-classes">Abstract base classes</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="alien.sample_generation.html">alien.sample_generation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="alien.sample_generation.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="alien.sample_generation.html#module-alien.sample_generation.filter_generator">alien.sample_generation.filter_generator module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="alien.sample_generation.html#module-alien.sample_generation.from_set">alien.sample_generation.from_set module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="alien.sample_generation.html#module-alien.sample_generation.generator">alien.sample_generation.generator module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="alien.sample_generation.html#module-alien.sample_generation.random_generator">alien.sample_generation.random_generator module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="alien.sample_generation.html#module-alien.sample_generation.transformation">alien.sample_generation.transformation module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="alien.sample_generation.html#module-alien.sample_generation">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="alien.selection.html">alien.selection</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="alien.selection.html#sampleselector">SampleSelector</a></li>
+<li class="toctree-l4"><a class="reference internal" href="alien.selection.html#covarianceselector">CovarianceSelector</a></li>
+<li class="toctree-l4"><a class="reference internal" href="alien.selection.html#baitselector">BAITSelector</a></li>
+<li class="toctree-l4"><a class="reference internal" href="alien.selection.html#kmeansselector">KmeansSelector</a></li>
+<li class="toctree-l4"><a class="reference internal" href="alien.selection.html#randomselector">RandomSelector</a></li>
+<li class="toctree-l4"><a class="reference internal" href="alien.selection.html#timestampselector">TimestampSelector</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="alien.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="alien.html#module-alien.classes">alien.classes module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.classes.parent_locals"><code class="docutils literal notranslate"><span class="pre">parent_locals()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.classes.final"><code class="docutils literal notranslate"><span class="pre">final()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.classes.override"><code class="docutils literal notranslate"><span class="pre">override()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.classes.init_subclass"><code class="docutils literal notranslate"><span class="pre">init_subclass()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.classes.abstract_group"><code class="docutils literal notranslate"><span class="pre">abstract_group()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="alien.html#module-alien.decorators">alien.decorators module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.decorators.default_decorator"><code class="docutils literal notranslate"><span class="pre">default_decorator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.decorators.flatten_batch"><code class="docutils literal notranslate"><span class="pre">flatten_batch()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.decorators.get_args"><code class="docutils literal notranslate"><span class="pre">get_args()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.decorators.do_normalize"><code class="docutils literal notranslate"><span class="pre">do_normalize()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.decorators.sig_append"><code class="docutils literal notranslate"><span class="pre">sig_append()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.decorators.normalize_args"><code class="docutils literal notranslate"><span class="pre">normalize_args()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.decorators.get_Xy"><code class="docutils literal notranslate"><span class="pre">get_Xy()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.decorators.RecursionContext"><code class="docutils literal notranslate"><span class="pre">RecursionContext</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.decorators.no_recursion"><code class="docutils literal notranslate"><span class="pre">no_recursion()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.decorators.get_defaults_from_self"><code class="docutils literal notranslate"><span class="pre">get_defaults_from_self()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.decorators.NEED"><code class="docutils literal notranslate"><span class="pre">NEED()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="alien.html#module-alien.stats">alien.stats module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.stats.multiply_std_dev"><code class="docutils literal notranslate"><span class="pre">multiply_std_dev()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.stats.augment_ensemble"><code class="docutils literal notranslate"><span class="pre">augment_ensemble()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.stats.covariance_from_ensemble"><code class="docutils literal notranslate"><span class="pre">covariance_from_ensemble()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.stats.std_dev_from_ensemble"><code class="docutils literal notranslate"><span class="pre">std_dev_from_ensemble()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.stats.ensemble_from_covariance"><code class="docutils literal notranslate"><span class="pre">ensemble_from_covariance()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.stats.similarity_gaussian"><code class="docutils literal notranslate"><span class="pre">similarity_gaussian()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.stats.similarity_exp"><code class="docutils literal notranslate"><span class="pre">similarity_exp()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.stats.similarity_cosine"><code class="docutils literal notranslate"><span class="pre">similarity_cosine()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.stats.covariance_from_similarity"><code class="docutils literal notranslate"><span class="pre">covariance_from_similarity()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.stats.joint_entropy"><code class="docutils literal notranslate"><span class="pre">joint_entropy()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.stats.joint_entropy_regularized"><code class="docutils literal notranslate"><span class="pre">joint_entropy_regularized()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.stats.group_sizes"><code class="docutils literal notranslate"><span class="pre">group_sizes()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.stats.group_edges"><code class="docutils literal notranslate"><span class="pre">group_edges()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="alien.html#module-alien.utils">alien.utils module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.utils.seed_all"><code class="docutils literal notranslate"><span class="pre">seed_all()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.utils.as_list"><code class="docutils literal notranslate"><span class="pre">as_list()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.utils.match"><code class="docutils literal notranslate"><span class="pre">match()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.utils.isint"><code class="docutils literal notranslate"><span class="pre">isint()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.utils.dict_get"><code class="docutils literal notranslate"><span class="pre">dict_get()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.utils.dict_pop"><code class="docutils literal notranslate"><span class="pre">dict_pop()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.utils.std_keys"><code class="docutils literal notranslate"><span class="pre">std_keys()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.utils.update_copy"><code class="docutils literal notranslate"><span class="pre">update_copy()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.utils.any_get"><code class="docutils literal notranslate"><span class="pre">any_get()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.utils.any_pop"><code class="docutils literal notranslate"><span class="pre">any_pop()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.utils.alias"><code class="docutils literal notranslate"><span class="pre">alias()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.utils.multisearch"><code class="docutils literal notranslate"><span class="pre">multisearch()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.utils.ufunc"><code class="docutils literal notranslate"><span class="pre">ufunc()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.utils.shift_seed"><code class="docutils literal notranslate"><span class="pre">shift_seed()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.utils.ranges"><code class="docutils literal notranslate"><span class="pre">ranges()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.utils.chunks"><code class="docutils literal notranslate"><span class="pre">chunks</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.utils.frac_enum"><code class="docutils literal notranslate"><span class="pre">frac_enum()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.utils.add_slice"><code class="docutils literal notranslate"><span class="pre">add_slice()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.utils.reshape"><code class="docutils literal notranslate"><span class="pre">reshape()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.utils.flatten"><code class="docutils literal notranslate"><span class="pre">flatten()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.utils.diagonal"><code class="docutils literal notranslate"><span class="pre">diagonal()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.utils.concatenate"><code class="docutils literal notranslate"><span class="pre">concatenate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.utils.join"><code class="docutils literal notranslate"><span class="pre">join()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.utils.is_iterable"><code class="docutils literal notranslate"><span class="pre">is_iterable()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.utils.as_numpy"><code class="docutils literal notranslate"><span class="pre">as_numpy()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.utils.is_one"><code class="docutils literal notranslate"><span class="pre">is_one()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.utils.zip_dict"><code class="docutils literal notranslate"><span class="pre">zip_dict()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.utils.axes_except"><code class="docutils literal notranslate"><span class="pre">axes_except()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.utils.sum_except"><code class="docutils literal notranslate"><span class="pre">sum_except()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.utils.no_default"><code class="docutils literal notranslate"><span class="pre">no_default()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.utils.SelfDict"><code class="docutils literal notranslate"><span class="pre">SelfDict</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="alien.html#alien.utils.SelfDict.pop"><code class="docutils literal notranslate"><span class="pre">SelfDict.pop()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="alien.html#alien.utils.SelfDict.clear"><code class="docutils literal notranslate"><span class="pre">SelfDict.clear()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="alien.html#alien.utils.SelfDict.copy"><code class="docutils literal notranslate"><span class="pre">SelfDict.copy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="alien.html#alien.utils.SelfDict.fromkeys"><code class="docutils literal notranslate"><span class="pre">SelfDict.fromkeys()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="alien.html#alien.utils.SelfDict.get"><code class="docutils literal notranslate"><span class="pre">SelfDict.get()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="alien.html#alien.utils.SelfDict.items"><code class="docutils literal notranslate"><span class="pre">SelfDict.items()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="alien.html#alien.utils.SelfDict.keys"><code class="docutils literal notranslate"><span class="pre">SelfDict.keys()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="alien.html#alien.utils.SelfDict.popitem"><code class="docutils literal notranslate"><span class="pre">SelfDict.popitem()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="alien.html#alien.utils.SelfDict.setdefault"><code class="docutils literal notranslate"><span class="pre">SelfDict.setdefault()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="alien.html#alien.utils.SelfDict.update"><code class="docutils literal notranslate"><span class="pre">SelfDict.update()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="alien.html#alien.utils.SelfDict.values"><code class="docutils literal notranslate"><span class="pre">SelfDict.values()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.utils.CachedDict"><code class="docutils literal notranslate"><span class="pre">CachedDict</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="alien.html#alien.utils.dot_last"><code class="docutils literal notranslate"><span class="pre">dot_last()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="alien.html#module-alien">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

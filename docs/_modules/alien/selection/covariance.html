@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>alien.selection.covariance &mdash; ALIEN 1.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            ALIEN
+          </a>
+              <div class="version">
+                1.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../active_learning.html">What is active learning?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../alien.models.html">alien.models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../alien.selection.html">alien.selection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../alien.benchmarks.html">alien.benchmarks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../alien.data.html">alien.data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../alien.sample_generation.html">alien.sample_generation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">ALIEN</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">alien.selection.covariance</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for alien.selection.covariance</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">scipy.linalg</span>
+<span class="kn">from</span> <span class="nn">scipy.optimize</span> <span class="kn">import</span> <span class="n">newton</span>
+
+<span class="kn">from</span> <span class="nn">..decorators</span> <span class="kn">import</span> <span class="n">flatten_batch</span><span class="p">,</span> <span class="n">get_defaults_from_self</span>
+<span class="kn">from</span> <span class="nn">..stats</span> <span class="kn">import</span> <span class="n">covariance_from_similarity</span><span class="p">,</span> <span class="n">similarity_exp</span>
+<span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">concatenate</span>
+<span class="kn">from</span> <span class="nn">.selector</span> <span class="kn">import</span> <span class="n">UncertaintySelector</span><span class="p">,</span> <span class="n">optimize_batch</span>
+
+
+<span class="c1"># pylint: disable=invalid-name</span>
+<span class="nd">@flatten_batch</span><span class="p">(</span><span class="n">bdim</span><span class="o">=-</span><span class="mi">2</span><span class="p">,</span> <span class="n">to_flatten</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">solve_triangular_torch</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">trans</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Solve a linear system using Pytorch.&quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">torch</span>
+
+    <span class="n">A</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">A</span><span class="p">),</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">trans</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">trans</span> <span class="o">==</span> <span class="s2">&quot;T&quot;</span> <span class="k">else</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">solve_triangular</span><span class="p">(</span>
+        <span class="n">A</span><span class="p">,</span> <span class="n">b</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="k">else</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">b</span><span class="p">),</span> <span class="n">upper</span><span class="o">=</span><span class="ow">not</span> <span class="n">lower</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span>
+
+
+<span class="c1"># pylint: disable=invalid-name</span>
+<span class="nd">@flatten_batch</span><span class="p">(</span><span class="n">bdim</span><span class="o">=-</span><span class="mi">2</span><span class="p">,</span> <span class="n">to_flatten</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">solve_triangular_scipy</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Solve a linear system using SciPy.&quot;&quot;&quot;</span>
+    <span class="n">soln</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="n">soln</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">solve_triangular</span><span class="p">(</span><span class="n">A</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">b</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">check_finite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">soln</span>
+
+
+<span class="n">HAS_TORCH</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<span class="k">def</span> <span class="nf">solve_triangular</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">global</span> <span class="n">HAS_TORCH</span>
+    <span class="k">if</span> <span class="n">HAS_TORCH</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">HAS_TORCH</span> <span class="o">=</span> <span class="s2">&quot;torch&quot;</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">solve_triangular_torch</span> <span class="k">if</span> <span class="n">HAS_TORCH</span> <span class="k">else</span> <span class="n">solve_triangular_scipy</span><span class="p">)(</span>
+        <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span>
+
+
+<div class="viewcode-block" id="CovarianceSelector"><a class="viewcode-back" href="../../../alien.selection.html#alien.selection.CovarianceSelector">[docs]</a><span class="k">class</span> <span class="nc">CovarianceSelector</span><span class="p">(</span><span class="n">UncertaintySelector</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Batch selector which looks for batches with large total covariance, i.e., large</span>
+<span class="sd">    joint entropy.</span>
+
+<span class="sd">    :param model: An instance of :class:`models.CovarianceRegressor`. Will be used to</span>
+<span class="sd">        determine prediction covariances for proposed batches.</span>
+<span class="sd">    :param samples: The sample pool to select from. Can be a numpy-style addressable</span>
+<span class="sd">        array (with first dimension indexing samples, and other dimensions indexing</span>
+<span class="sd">        features)---note that :class:`data.Dataset` serves this purpose---or an instance of</span>
+<span class="sd">        :class:`sample_generation.SampleGenerator`, in which case the `num_samples` parameter is</span>
+<span class="sd">        in effect.</span>
+<span class="sd">    :param num_samples: If a :class:`SampleGenerator` has been provided via the `samples`</span>
+<span class="sd">        parameter, then at the start of a call to :meth:`.select`, `num_samples`</span>
+<span class="sd">        samples will be drawn from the `SampleGenerator`, or as many samples as the</span>
+<span class="sd">        :class:`SampleGenerator` can provide, whichever is less. Defaults to :Inf:, i.e., draws</span>
+<span class="sd">        as many samples as available.</span>
+<span class="sd">    :param batch_size: Size of the batch to select.</span>
+<span class="sd">    :param regularization: The diagonal of the covariance matrix will be multiplied by</span>
+<span class="sd">        (1 + regularization), after being computed by the model. This ensures that</span>
+<span class="sd">        the coviarance matrix is positive definite (as long as all the covariances</span>
+<span class="sd">        are positive). Defaults to .05</span>
+
+<span class="sd">        This parameter is particularly important if the covariance is computed from</span>
+<span class="sd">        an ensemble of models, and the ensemble is not very large: for a given batch</span>
+<span class="sd">        of N samples, and a model ensemble size of M, the distribution of predictions</span>
+<span class="sd">        will consist of M points in an N-dimensional space. If M &lt; N, the covariance</span>
+<span class="sd">        of the batch predictions is sure to have determinant 0, and no comparisons</span>
+<span class="sd">        can be made (without regularization). Even if M &gt;= N, a relatively small</span>
+<span class="sd">        ensemble size can produce numerical instability in the covariances, which</span>
+<span class="sd">        regularization smooths out.</span>
+<span class="sd">    :param normalize: If True, scales the (co)variances by the inverse-square-length</span>
+<span class="sd">        of the embedding vector (retrieved by a call to `model.embedding`), modulo a</span>
+<span class="sd">        small constant. This prevents the algorithm from just seeking out those inputs</span>
+<span class="sd">        which give large embedding vectors. Defaults to False.</span>
+
+<span class="sd">        If the model has not implemented an `.embedding` method, setting</span>
+<span class="sd">        `normalize = True` will raise a `NotImplementedError` when you call</span>
+<span class="sd">        :meth:`.select`. :class:`LaplaceApproxRegressor` and subclasses have implemented</span>
+<span class="sd">        :meth:`.embedding`, as have some others.</span>
+<span class="sd">    :param normalize_epsilon: In the normalization step described above, variances are</span>
+<span class="sd">        divided by |embedding_length|² + ε, where</span>
+<span class="sd">            ε = normalize_epsilon * MEAN_SQUARE(all embedding lengths)</span>
+<span class="sd">        Defaults to 1e-3. Should be related to measurement error.</span>
+<span class="sd">    :param similarity: The effective covariance matrix (before regularization) will be</span>
+<span class="sd">        (1 - similarity) * covariance (computed from the model) + similarity * S,</span>
+<span class="sd">        where S is a &quot;synthetic&quot; covariance computed from a similarity matrix, as</span>
+<span class="sd">        follows:</span>
+<span class="sd">        First, a similarity matrix is computed: each feature dimension in the data, X,</span>
+<span class="sd">        will be normalized to have variance of 1. Then, a euclidean distance matrix is</span>
+<span class="sd">        computed for the whole dataset (divided by sqrt(N), where N is the number of</span>
+<span class="sd">        feature dimensions). Then, this distance metric is passed into a decaying</span>
+<span class="sd">        exponential, with 1/e-life equal to the parameter &#39;similarity_scale&#39;. This</span>
+<span class="sd">        gives a positive-definite similarity matrix, with ones on the diagonal.</span>
+<span class="sd">        Second, the similarity matrix is interpreted as a correlation matrix.</span>
+<span class="sd">        Variances are taken from the model (i.e., copied from the diagonal of the</span>
+<span class="sd">        covariance matrix). Together, these data determine a covariance matrix, which</span>
+<span class="sd">        will be combined with the model covariance in the given proportion.</span>
+<span class="sd">        Defaults to 0.</span>
+<span class="sd">    :param similarity_scale: This tunes the correlation matrix in the similarity</span>
+<span class="sd">        computation above. The pairwise euclidean distances in normalized feature</span>
+<span class="sd">        space are passed into a exponential with 1/e-life equal to similarity_scale.</span>
+<span class="sd">        So, a smaller value for similarity_scale will give smaller off-diagonal</span>
+<span class="sd">        entries on the correlation/covariance matrix.</span>
+<span class="sd">        If similarity_scale is set to &#39;auto&#39;, then a scale is chosen to match the</span>
+<span class="sd">        mean squares of the similarities and the correlations (from the model).</span>
+<span class="sd">    :param prior: Specifies a &quot;prior probability&quot; for each sample. The covariance</span>
+<span class="sd">        matrix (after the application of similarity) will be multiplied by the priors</span>
+<span class="sd">        such that, if C_ij is a covariance and p_i, p_j are the corresponding priors,</span>
+<span class="sd">        C&#39;_ij = C_ij p_i p_j. This is a covenient way of introducing factors</span>
+<span class="sd">        other than covariance into the ranking. &#39;prior&#39; may be an array of numbers</span>
+<span class="sd">        (of size num_samples), or a function (applied to the samples), or one of the</span>
+<span class="sd">        following:</span>
+<span class="sd">            &#39;prediction&#39;: calculates a prior from the quantile of the predicted</span>
+<span class="sd">                performance (not the uncertainties). &#39;prior_scale&#39; sets the power</span>
+<span class="sd">                this quantile is raised to.</span>
+<span class="sd">        Defaults to the constant value 1.</span>
+<span class="sd">    :param prior_scale: The prior will be raised to this power before applying it to</span>
+<span class="sd">        the covariance. Defaults to 1.</span>
+<span class="sd">    :param prefilter: Reduces the incoming sample pool before applying batch</span>
+<span class="sd">        selection. Selects the subset of the samples which have the highest</span>
+<span class="sd">        std_dev * prior score. If 0 &lt; prefilter &lt; 1, takes this fraction of the</span>
+<span class="sd">        sample pool. If prefilter &gt;= 1, takes this many samples. Since batch</span>
+<span class="sd">        selection computes and stores the size-N^2 covariance matrix for the whole</span>
+<span class="sd">        sample pool, it should work with at most around 10,000 samples. Prefiltering</span>
+<span class="sd">        can work with much larger pools, since it only needs to compute N standard</span>
+<span class="sd">        deviations. Therefore, a practical strategy is to take a sample pool about</span>
+<span class="sd">        5 times as big as you can handle covariances for, then narrow down to only</span>
+<span class="sd">        the top 20% individual scores before batch selection. Narrowing to much less</span>
+<span class="sd">        than 20% risks changing what will ultimately be the optimal batch.</span>
+<span class="sd">    :param random_seed: A random seed for deterministic behaviour.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">samples</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">num_samples</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">),</span>
+        <span class="n">batch_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">normalize</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">normalize_epsilon</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
+        <span class="n">regularization</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span>
+        <span class="n">similarity</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">similarity_scale</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+        <span class="n">prior</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">prior_scale</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">prefilter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">random_seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">fast_opt</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">n_rounds</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+            <span class="c1"># labelled_samples=labelled_samples,</span>
+            <span class="n">samples</span><span class="o">=</span><span class="n">samples</span><span class="p">,</span>
+            <span class="n">num_samples</span><span class="o">=</span><span class="n">num_samples</span><span class="p">,</span>
+            <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">normalize</span> <span class="o">=</span> <span class="n">normalize</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">normalize_epsilon</span> <span class="o">=</span> <span class="n">normalize_epsilon</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">regularization</span> <span class="o">=</span> <span class="n">regularization</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">similarity</span> <span class="o">=</span> <span class="n">similarity</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">similarity_scale</span> <span class="o">=</span> <span class="n">similarity_scale</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">random_seed</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prior</span> <span class="o">=</span> <span class="n">prior</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prior_scale</span> <span class="o">=</span> <span class="n">prior_scale</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prefilter</span> <span class="o">=</span> <span class="n">prefilter</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_rounds</span> <span class="o">=</span> <span class="n">n_rounds</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fast_opt</span> <span class="o">=</span> <span class="n">fast_opt</span>
+
+    <span class="nd">@get_defaults_from_self</span>
+    <span class="k">def</span> <span class="nf">_select</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">samples</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">fixed_samples</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">batch_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">prior</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">fixed_prior</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">):</span>
+        <span class="k">if</span> <span class="n">fixed_samples</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">n_fixed</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">fixed_samples</span><span class="p">)</span>
+            <span class="n">samples</span> <span class="o">=</span> <span class="n">concatenate</span><span class="p">(</span><span class="n">fixed_samples</span><span class="p">,</span> <span class="n">samples</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">n_fixed</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c1"># get prediction covariances</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Computing covariance matrix for sample pool...&quot;</span><span class="p">)</span>
+        <span class="n">cov</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">covariance</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
+
+        <span class="c1"># smooth out the covariance with a similarity term</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">similarity</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Computing similarity matrix...&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">similarity_scale</span> <span class="o">==</span> <span class="s2">&quot;auto&quot;</span><span class="p">:</span>
+                <span class="c1"># similarity is scaled so that it has the same mean square</span>
+                <span class="c1"># as the correlation</span>
+                <span class="c1"># only subsamples</span>
+                <span class="n">sim_1</span> <span class="o">=</span> <span class="n">similarity_exp</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">std_dev</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">cov</span><span class="o">.</span><span class="n">diagonal</span><span class="p">())</span>
+                <span class="n">corr</span> <span class="o">=</span> <span class="n">cov</span> <span class="o">/</span> <span class="n">std_dev</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">/</span> <span class="n">std_dev</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+                <span class="n">corr_mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">corr</span><span class="p">))</span>
+                <span class="n">log_s1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">sim_1</span><span class="p">)</span>
+
+                <span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">sim_1</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">x</span><span class="p">))</span> <span class="o">-</span> <span class="n">corr_mean</span>
+
+                <span class="k">def</span> <span class="nf">df</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">sim_1</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">x</span><span class="p">)</span> <span class="o">*</span> <span class="n">log_s1</span><span class="p">)</span>
+
+                <span class="n">x</span> <span class="o">=</span> <span class="n">newton</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="n">corr_mean</span> <span class="o">*</span> <span class="mf">1e-4</span><span class="p">,</span> <span class="n">full_output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">disp</span><span class="o">=</span><span class="kc">False</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">sim</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">sim_1</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">sim</span> <span class="o">=</span> <span class="n">similarity_exp</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">similarity_scale</span><span class="p">)</span>
+
+            <span class="n">cov</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">similarity</span><span class="p">)</span> <span class="o">*</span> <span class="n">cov</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">similarity</span> <span class="o">*</span> <span class="n">covariance_from_similarity</span><span class="p">(</span>
+                <span class="n">sim</span><span class="p">,</span> <span class="n">cov</span><span class="o">.</span><span class="n">diagonal</span><span class="p">()</span>
+            <span class="p">)</span>
+
+        <span class="c1"># normalize covariance for embedding vector size</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalize</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;embedding&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Normalizing covariances by embedding norms...&quot;</span><span class="p">)</span>
+            <span class="n">emb_norm2</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">embedding</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">eps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalize_epsilon</span> <span class="o">*</span> <span class="n">emb_norm2</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+            <span class="n">prior</span> <span class="o">=</span> <span class="n">prior</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">emb_norm2</span> <span class="o">+</span> <span class="n">eps</span><span class="p">)</span>
+
+        <span class="c1"># apply the prior</span>
+        <span class="n">cov</span> <span class="o">=</span> <span class="n">prior</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">*</span> <span class="n">cov</span> <span class="o">*</span> <span class="n">prior</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+
+        <span class="n">epsilon</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">cov</span><span class="p">))</span> <span class="o">*</span> <span class="mf">1e-8</span>
+
+        <span class="c1"># This actually returns 1/2 the log-determinant of the covariance</span>
+        <span class="k">def</span> <span class="nf">cov_fn</span><span class="p">(</span><span class="n">indices</span><span class="p">):</span>
+            <span class="c1"># select sub-matrix of covariance matrix</span>
+            <span class="n">i_0</span><span class="p">,</span> <span class="n">i_1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">broadcast_arrays</span><span class="p">(</span><span class="n">indices</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:],</span> <span class="n">indices</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">])</span>
+            <span class="n">cov_batch</span> <span class="o">=</span> <span class="n">cov</span><span class="p">[</span><span class="n">i_0</span><span class="p">,</span> <span class="n">i_1</span><span class="p">]</span>
+            <span class="k">assert</span> <span class="n">cov_batch</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="o">*</span><span class="n">indices</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">indices</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+            <span class="c1"># regularize to avoid non-positive matrices</span>
+            <span class="c1"># (eg., when a sample is repeated in a batch)</span>
+            <span class="n">batch_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">indices</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">cov_batch</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">batch_indices</span><span class="p">,</span> <span class="n">batch_indices</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span>
+                <span class="n">cov_batch</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">batch_indices</span><span class="p">,</span> <span class="n">batch_indices</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">regularization</span> <span class="o">+</span> <span class="n">epsilon</span>
+            <span class="p">)</span>
+
+            <span class="c1"># compute log-determinant using cholesky decomposition</span>
+            <span class="n">R</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cholesky</span><span class="p">(</span><span class="n">cov_batch</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diagonal</span><span class="p">(</span><span class="n">R</span><span class="p">,</span> <span class="n">axis1</span><span class="o">=-</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis2</span><span class="o">=-</span><span class="mi">1</span><span class="p">)),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># This is a weaker version...</span>
+        <span class="k">def</span> <span class="nf">cov_fn_opt_step</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">samples</span><span class="p">):</span>
+            <span class="c1"># select sub-matrix of covariance matrix</span>
+            <span class="n">i_0</span><span class="p">,</span> <span class="n">i_1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">broadcast_arrays</span><span class="p">(</span><span class="n">indices</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:],</span> <span class="n">indices</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">])</span>
+            <span class="n">cov_batch</span> <span class="o">=</span> <span class="n">cov</span><span class="p">[</span><span class="n">i_0</span><span class="p">,</span> <span class="n">i_1</span><span class="p">]</span>
+            <span class="k">assert</span> <span class="n">cov_batch</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="o">*</span><span class="n">indices</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">indices</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+            <span class="c1"># regularize to avoid non-positive matrices</span>
+            <span class="c1"># (eg., when a sample is repeated in a batch)</span>
+            <span class="n">batch_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">indices</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">cov_batch</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">batch_indices</span><span class="p">,</span> <span class="n">batch_indices</span><span class="p">]</span> <span class="o">*=</span> <span class="mi">1</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">regularization</span>
+
+            <span class="c1"># pick out covariances of each batch w.r.t. the whole sample_space</span>
+            <span class="n">C10</span> <span class="o">=</span> <span class="n">cov</span><span class="p">[</span><span class="n">indices</span><span class="p">,</span> <span class="p">:]</span>
+            <span class="k">assert</span> <span class="n">C10</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="o">*</span><span class="n">indices</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">samples</span><span class="p">))</span>
+
+            <span class="n">L00</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cholesky</span><span class="p">(</span><span class="n">cov_batch</span><span class="p">)</span>
+            <span class="n">L10</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">solve_triangular</span><span class="p">(</span><span class="n">L00</span><span class="p">,</span> <span class="n">C10</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+            <span class="k">assert</span> <span class="n">L10</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="o">*</span><span class="n">indices</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">samples</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">swapaxes</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">cov</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">L10</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Optimizing batches...&quot;</span><span class="p">)</span>
+        <span class="n">batch_indices</span> <span class="o">=</span> <span class="n">optimize_batch</span><span class="p">(</span>
+            <span class="n">cov_fn</span><span class="p">,</span>
+            <span class="n">batch_size</span><span class="p">,</span>
+            <span class="nb">len</span><span class="p">(</span><span class="n">samples</span><span class="p">),</span>
+            <span class="n">n_fixed</span><span class="o">=</span><span class="n">n_fixed</span><span class="p">,</span>
+            <span class="n">scoring_opt_step</span><span class="o">=</span><span class="n">cov_fn_opt_step</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fast_opt</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">n_rounds</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_rounds</span><span class="p">,</span>
+            <span class="n">random_seed</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">integers</span><span class="p">(</span><span class="mf">1e8</span><span class="p">),</span>
+            <span class="c1"># n_tuples=None, n_best=None,</span>
+            <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">batch_indices</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

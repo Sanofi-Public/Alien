@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>alien.benchmarks.metrics &mdash; ALIEN 1.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            ALIEN
+          </a>
+              <div class="version">
+                1.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../active_learning.html">What is active learning?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../alien.models.html">alien.models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../alien.selection.html">alien.selection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../alien.benchmarks.html">alien.benchmarks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../alien.data.html">alien.data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../alien.sample_generation.html">alien.sample_generation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">ALIEN</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">alien.benchmarks.metrics</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for alien.benchmarks.metrics</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Module for computing metrics and plotting.</span>
+<span class="sd">Confidence intervals, RMSE, scatter plots.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1"># TODO: I&#39;ve left TODOs throughout. Still need to look at Scatter and plot_scores.</span>
+<span class="c1"># - x is undefined in confint</span>
+
+<span class="kn">import</span>  <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Iterable</span>
+<span class="kn">from</span> <span class="nn">glob</span> <span class="kn">import</span> <span class="n">glob</span>
+<span class="kn">from</span> <span class="nn">statistics</span> <span class="kn">import</span> <span class="n">median</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">scipy.stats</span> <span class="k">as</span> <span class="nn">st</span>
+<span class="kn">from</span> <span class="nn">numpy.typing</span> <span class="kn">import</span> <span class="n">ArrayLike</span>
+
+<span class="kn">from</span> <span class="nn">..data</span> <span class="kn">import</span> <span class="n">TeachableDataset</span>
+<span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">isint</span>
+
+
+<div class="viewcode-block" id="conf_int"><a class="viewcode-back" href="../../../alien.benchmarks.html#alien.benchmarks.metrics.conf_int">[docs]</a><span class="k">def</span> <span class="nf">conf_int</span><span class="p">(</span><span class="n">confidence_level</span><span class="p">,</span> <span class="n">standard_error</span><span class="p">,</span> <span class="n">len_x</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute confidence interval using a normal or t-distribution</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        confidence_level (_type_): _description_</span>
+<span class="sd">        standard_error (_type_): _description_</span>
+<span class="sd">        len_x (_type_, optional): _description_. Defaults to None.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        _type_: _description_</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">len_x</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">st</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">interval</span><span class="p">(</span><span class="n">confidence_level</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">standard_error</span>
+    <span class="k">if</span> <span class="n">isint</span><span class="p">(</span><span class="n">len_x</span><span class="p">)</span> <span class="ow">and</span> <span class="n">len_x</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">st</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">interval</span><span class="p">(</span><span class="n">confidence_level</span><span class="p">,</span> <span class="n">len_x</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">standard_error</span>
+
+    <span class="c1"># TODO: x is undefined here. Not sure where it should come from?</span>
+    <span class="n">interval</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">len_x</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">ndindex</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]):</span>
+            <span class="k">if</span> <span class="n">len_x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">interval</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">interval</span><span class="p">(</span>
+                    <span class="n">confidence_level</span><span class="p">,</span> <span class="n">len_x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">standard_error</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">interval</span></div>
+
+
+<div class="viewcode-block" id="sem"><a class="viewcode-back" href="../../../alien.benchmarks.html#alien.benchmarks.metrics.sem">[docs]</a><span class="k">def</span> <span class="nf">sem</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ArrayLike</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute standard error of the mean.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        x (ArrayLike): array to compute SEM for.</span>
+<span class="sd">        axis (int, optional): Axis in x to make the computation along. Defaults to 0.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        ArrayLike: Array of computed SEMs.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">axis</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="Score"><a class="viewcode-back" href="../../../alien.benchmarks.html#alien.benchmarks.metrics.Score">[docs]</a><span class="k">class</span> <span class="nc">Score</span><span class="p">:</span>
+    <span class="n">default_filename</span> <span class="o">=</span> <span class="s1">&#39;*.pickle&#39;</span>
+    
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">x</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">0</span><span class="p">,)),</span>
+        <span class="n">y</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">0</span><span class="p">,)),</span>
+        <span class="n">err</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">file_path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">axes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">plot_args</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="c1"># TODO: module docstring</span>
+        <span class="c1"># TODO: axes is not used anywhere.</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">x</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">TeachableDataset</span><span class="p">)</span> <span class="k">else</span> <span class="n">TeachableDataset</span><span class="o">.</span><span class="n">from_data</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">y</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">TeachableDataset</span><span class="p">)</span> <span class="k">else</span> <span class="n">TeachableDataset</span><span class="o">.</span><span class="n">from_data</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">err</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">err</span><span class="p">,</span> <span class="n">TeachableDataset</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">err</span> <span class="o">=</span> <span class="n">err</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">err</span> <span class="o">=</span> <span class="n">TeachableDataset</span><span class="o">.</span><span class="n">from_data</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file_path</span> <span class="o">=</span> <span class="n">file_path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">axes</span> <span class="o">=</span> <span class="n">axes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plot_args</span> <span class="o">=</span> <span class="n">plot_args</span> <span class="k">if</span> <span class="n">plot_args</span> <span class="k">else</span> <span class="p">{}</span>
+
+<div class="viewcode-block" id="Score.append"><a class="viewcode-back" href="../../../alien.benchmarks.html#alien.benchmarks.metrics.Score.append">[docs]</a>    <span class="k">def</span> <span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_val</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">y_val</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Append point to self.x and self.y</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            x_val (float): x value to append</span>
+<span class="sd">            y_val (float): y value to append</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x_val</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">y_val</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Score.save"><a class="viewcode-back" href="../../../alien.benchmarks.html#alien.benchmarks.metrics.Score.save">[docs]</a>    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save Score object to given filepath.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            file_path (Optional[str], optional): Path to save object. Defaults to None.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">file_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">file_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_path</span>
+        <span class="k">assert</span> <span class="n">file_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;File not provided&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Score.load"><a class="viewcode-back" href="../../../alien.benchmarks.html#alien.benchmarks.metrics.Score.load">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load a Score object</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            file (str): File path location.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Score: Score object to load.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s1">&#39;*&#39;</span> <span class="ow">in</span> <span class="n">file_path</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">Score</span><span class="o">.</span><span class="n">average_runs</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+            
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="n">x</span><span class="o">.</span><span class="n">file</span> <span class="o">=</span> <span class="n">file_path</span>
+        <span class="k">return</span> <span class="n">x</span></div>
+
+<div class="viewcode-block" id="Score.load_many"><a class="viewcode-back" href="../../../alien.benchmarks.html#alien.benchmarks.metrics.Score.load_many">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">load_many</span><span class="p">(</span><span class="o">*</span><span class="n">scores</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="n">default_filename</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Loads many Scores at once, and returns a list.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            *args: several filenames, or one filename with wildcards, or</span>
+<span class="sd">                one folder name (which will have wildcards appended)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list[Score]: _description_</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">scores</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">scores</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">a</span> <span class="o">=</span> <span class="n">scores</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="s1">&#39;*&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">a</span><span class="p">:</span>
+                    <span class="n">a</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="s1">&#39;**&#39;</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+                <span class="n">scores</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+            <span class="n">scores</span> <span class="o">=</span> <span class="p">[</span><span class="n">Score</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">scores</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">scores</span></div>
+
+<div class="viewcode-block" id="Score.average_runs"><a class="viewcode-back" href="../../../alien.benchmarks.html#alien.benchmarks.metrics.Score.average_runs">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">average_runs</span><span class="p">(</span>
+        <span class="o">*</span><span class="n">args</span><span class="p">,</span>
+        <span class="n">length</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;longest&quot;</span><span class="p">,</span>
+        <span class="n">err</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">file_path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">save</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="n">default_filename</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;_summary_</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            args: _description_</span>
+<span class="sd">            length (str, optional): _description_. Defaults to &quot;longest&quot;.</span>
+<span class="sd">            name (Optional[str], optional): _description_. Defaults to None.</span>
+<span class="sd">            file_path (Optional[str], optional): File path to save object. Defaults to None.</span>
+<span class="sd">            save (bool, optional): whether to save returned object. Defaults to False.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            NotImplementedError: _description_</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Score: average score to return</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">scores</span> <span class="o">=</span> <span class="n">Score</span><span class="o">.</span><span class="n">load_many</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="n">filename</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">scores</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span>
+
+        <span class="k">if</span> <span class="n">length</span> <span class="o">==</span> <span class="s2">&quot;median&quot;</span><span class="p">:</span>
+            <span class="n">len_x</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">median</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">scores</span><span class="p">]))</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">scores</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">x</span>
+            <span class="n">err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">len_x</span><span class="p">)</span> <span class="k">if</span> <span class="n">err</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">s</span><span class="o">.</span><span class="n">y</span><span class="p">[:</span><span class="n">len_x</span><span class="p">]</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">scores</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">y</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">len_x</span><span class="p">]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">err</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">scores</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">err</span> <span class="o">=</span> <span class="n">sem</span><span class="p">(</span>
+                    <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">s</span><span class="o">.</span><span class="n">y</span><span class="p">[:</span><span class="n">len_x</span><span class="p">]</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">scores</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">y</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">len_x</span><span class="p">]),</span>
+                    <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                <span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">length</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;longest&quot;</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">}:</span>
+            <span class="n">i_max</span><span class="p">,</span> <span class="n">n_max</span> <span class="o">=</span> <span class="nb">max</span><span class="p">((</span><span class="n">i</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">scores</span><span class="p">]))</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">scores</span><span class="p">[</span><span class="n">n_max</span><span class="p">]</span><span class="o">.</span><span class="n">x</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">i_max</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+            <span class="n">err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">i_max</span><span class="p">)</span> <span class="k">if</span> <span class="n">err</span> <span class="k">else</span> <span class="kc">None</span>
+
+            <span class="n">i_0</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">while</span> <span class="n">i_0</span> <span class="o">&lt;</span> <span class="n">i_max</span><span class="p">:</span>
+                <span class="n">i_1</span> <span class="o">=</span> <span class="nb">min</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">scores</span><span class="p">])</span>
+                <span class="n">y</span><span class="p">[</span><span class="n">i_0</span><span class="p">:</span><span class="n">i_1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">s</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="n">i_0</span><span class="p">:</span><span class="n">i_1</span><span class="p">]</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">scores</span><span class="p">]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">err</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">scores</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">err</span><span class="p">[</span><span class="n">i_0</span><span class="p">:</span><span class="n">i_1</span><span class="p">]</span> <span class="o">=</span> <span class="n">sem</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">s</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="n">i_0</span><span class="p">:</span><span class="n">i_1</span><span class="p">]</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">scores</span><span class="p">]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+                <span class="n">scores</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">scores</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">i_1</span><span class="p">]</span>
+                <span class="n">i_0</span> <span class="o">=</span> <span class="n">i_1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                <span class="p">(</span>
+                    <span class="s2">&quot;Averaging only works with lengths &#39;median&#39;, &#39;longest&#39; or &#39;max&#39;.&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">length</span><span class="si">}</span><span class="s2">&#39; was given&quot;</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="n">avg_score</span> <span class="o">=</span> <span class="n">Score</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">err</span><span class="o">=</span><span class="n">err</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">file_path</span><span class="o">=</span><span class="n">file_path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">save</span><span class="p">:</span>
+            <span class="n">avg_score</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">avg_score</span></div>
+
+    <span class="k">def</span> <span class="nf">__getstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">del</span> <span class="n">d</span><span class="p">[</span><span class="s2">&quot;file_path&quot;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">d</span></div>
+
+
+<div class="viewcode-block" id="TopScore"><a class="viewcode-back" href="../../../alien.benchmarks.html#alien.benchmarks.metrics.TopScore">[docs]</a><span class="k">class</span> <span class="nc">TopScore</span><span class="p">(</span><span class="n">Score</span><span class="p">):</span>
+<div class="viewcode-block" id="TopScore.compute"><a class="viewcode-back" href="../../../alien.benchmarks.html#alien.benchmarks.metrics.TopScore.compute">[docs]</a>    <span class="k">def</span> <span class="nf">compute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">labels</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">average_over</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute top score.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            x (_type_): _description_</span>
+<span class="sd">            labels (ArrayLike): _description_</span>
+<span class="sd">            average_over (int, optional): _description_. Defaults to 1.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            _type_: _description_</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># TODO: Docstring and type hints.</span>
+        <span class="n">score</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">labels</span><span class="p">)[</span><span class="o">-</span><span class="n">average_over</span><span class="p">:])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">score</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">score</span></div></div>
+
+
+<div class="viewcode-block" id="RMSE"><a class="viewcode-back" href="../../../alien.benchmarks.html#alien.benchmarks.metrics.RMSE">[docs]</a><span class="k">class</span> <span class="nc">RMSE</span><span class="p">(</span><span class="n">Score</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="o">*</span><span class="n">args</span><span class="p">,</span>
+        <span class="n">scatter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">axes</span><span class="p">:</span> <span class="n">Tuple</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;samples&quot;</span><span class="p">,</span> <span class="s2">&quot;RMSE&quot;</span><span class="p">),</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="n">axes</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scatter</span> <span class="o">=</span> <span class="n">scatter</span>
+        <span class="k">if</span> <span class="n">scatter</span> <span class="ow">and</span> <span class="n">scatter</span><span class="o">.</span><span class="n">preds</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">scatter</span><span class="o">.</span><span class="n">preds</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">scatter</span><span class="p">)</span>
+
+<div class="viewcode-block" id="RMSE.compute"><a class="viewcode-back" href="../../../alien.benchmarks.html#alien.benchmarks.metrics.RMSE.compute">[docs]</a>    <span class="k">def</span> <span class="nf">compute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a0</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">a1</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="c1"># TODO: docstring and type hints</span>
+        <span class="c1"># TODO: why have a0 and a1 if they are mutually exclusive?</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a0</span><span class="p">,</span> <span class="n">Scatter</span><span class="p">):</span>
+            <span class="n">scatter</span> <span class="o">=</span> <span class="n">a0</span>
+            <span class="n">samples</span> <span class="o">=</span> <span class="n">scatter</span><span class="o">.</span><span class="n">samples</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a1</span><span class="p">,</span> <span class="n">Scatter</span><span class="p">):</span>
+            <span class="n">scatter</span> <span class="o">=</span> <span class="n">a1</span>
+            <span class="n">samples</span> <span class="o">=</span> <span class="n">a0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">scatter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scatter</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scatter</span><span class="o">.</span><span class="n">samples</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scatter</span><span class="o">.</span><span class="n">samples</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">samples</span> <span class="o">=</span> <span class="n">a0</span>
+        <span class="k">if</span> <span class="n">samples</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">)</span> <span class="k">else</span> <span class="mi">1</span>
+        <span class="n">rmse</span> <span class="o">=</span> <span class="n">scatter</span><span class="o">.</span><span class="n">RMSE</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">rmse</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="RMSE.from_folder"><a class="viewcode-back" href="../../../alien.benchmarks.html#alien.benchmarks.metrics.RMSE.from_folder">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">from_folder</span><span class="p">(</span>
+        <span class="n">folder</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">file_path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">save</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            folder (str): _description_</span>
+<span class="sd">            name (Optional[str], optional): _description_. Defaults to None.</span>
+<span class="sd">            file_path (Optional[str], optional): _description_. Defaults to None.</span>
+<span class="sd">            save (bool, optional): _description_. Defaults to False.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># TODO: docstring</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">file_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">((</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">folder</span><span class="p">)[</span><span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;RMSE&quot;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">file_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">folder</span><span class="p">,</span> <span class="n">name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;_&quot;</span><span class="p">))</span>
+
+        <span class="n">score</span> <span class="o">=</span> <span class="n">RMSE</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">file_path</span><span class="p">)</span>
+
+        <span class="n">files</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">folder</span><span class="p">,</span> <span class="s2">&quot;scatter*&quot;</span><span class="p">)))</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
+            <span class="n">scatter</span> <span class="o">=</span> <span class="n">Scatter</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="n">score</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">scatter</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">save</span><span class="p">:</span>
+            <span class="n">score</span><span class="o">.</span><span class="n">save</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="Scatter"><a class="viewcode-back" href="../../../alien.benchmarks.html#alien.benchmarks.metrics.Scatter">[docs]</a><span class="k">class</span> <span class="nc">Scatter</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">labels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">preds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">errs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">test</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">samples</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">axes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">plot_args</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">samples</span> <span class="o">=</span> <span class="n">samples</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file</span> <span class="o">=</span> <span class="n">file</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">axes</span> <span class="o">=</span> <span class="n">axes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plot_args</span> <span class="o">=</span> <span class="n">plot_args</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_errs</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">test</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">X</span> <span class="o">=</span> <span class="n">test</span><span class="o">.</span><span class="n">X</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">labels</span> <span class="o">=</span> <span class="n">test</span><span class="o">.</span><span class="n">y</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_errs</span> <span class="o">=</span> <span class="n">errs</span>
+            <span class="k">if</span> <span class="n">model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">model</span><span class="o">.</span><span class="n">trained</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">get_errs</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">errs</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">preds</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">errs</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">X</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">labels</span> <span class="o">=</span> <span class="n">labels</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">preds</span> <span class="o">=</span> <span class="n">preds</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">errs</span> <span class="o">=</span> <span class="n">errs</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_errs</span> <span class="o">=</span> <span class="n">errs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="Scatter.compute"><a class="viewcode-back" href="../../../alien.benchmarks.html#alien.benchmarks.metrics.Scatter.compute">[docs]</a>    <span class="k">def</span> <span class="nf">compute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">get_errs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">samples</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">samples</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">samples</span> <span class="o">=</span> <span class="n">samples</span>
+        <span class="k">if</span> <span class="n">get_errs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">get_errs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_errs</span>
+        <span class="k">if</span> <span class="n">get_errs</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">preds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">errs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">return_std_dev</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">preds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X</span><span class="p">)</span>  <span class="c1"># , return_std_dev=False)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">errs</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="Scatter.RMSE"><a class="viewcode-back" href="../../../alien.benchmarks.html#alien.benchmarks.metrics.Scatter.RMSE">[docs]</a>    <span class="k">def</span> <span class="nf">RMSE</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">preds</span><span class="p">))))</span></div>
+
+<div class="viewcode-block" id="Scatter.plot"><a class="viewcode-back" href="../../../alien.benchmarks.html#alien.benchmarks.metrics.Scatter.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">show_errors</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_diagonal</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">block</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">axes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">axes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">axes</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">axes</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="n">title</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
+            <span class="n">title</span> <span class="o">+=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">samples</span><span class="p">:</span>
+            <span class="n">title</span> <span class="o">+=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">samples</span><span class="si">}</span><span class="s2"> samples&quot;</span><span class="p">]</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">title</span><span class="p">:</span>
+            <span class="n">axes</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
+
+        <span class="n">show_errors</span> <span class="o">=</span> <span class="n">show_errors</span> <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">errs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">show_errors</span><span class="p">:</span>
+            <span class="n">axes</span><span class="o">.</span><span class="n">errorbar</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">preds</span><span class="p">,</span>
+                <span class="n">yerr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">errs</span><span class="p">,</span>
+                <span class="n">fmt</span><span class="o">=</span><span class="s2">&quot;o&quot;</span><span class="p">,</span>
+                <span class="n">ecolor</span><span class="o">=</span><span class="s2">&quot;red&quot;</span><span class="p">,</span>
+                <span class="n">alpha</span><span class="o">=</span><span class="mf">0.4</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="n">y_max</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">)</span>
+        <span class="n">y_min</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">amin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">show_diagonal</span><span class="p">:</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">y_min</span><span class="p">,</span> <span class="n">y_max</span><span class="p">],</span> <span class="p">[</span><span class="n">y_min</span><span class="p">,</span> <span class="n">y_max</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;green&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">show</span><span class="p">:</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">block</span><span class="o">=</span><span class="n">block</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">axes</span></div>
+
+<div class="viewcode-block" id="Scatter.save"><a class="viewcode-back" href="../../../alien.benchmarks.html#alien.benchmarks.metrics.Scatter.save">[docs]</a>    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">file</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Scatter.load"><a class="viewcode-back" href="../../../alien.benchmarks.html#alien.benchmarks.metrics.Scatter.load">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="n">file</span><span class="p">):</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="n">x</span><span class="o">.</span><span class="n">file</span> <span class="o">=</span> <span class="n">file</span>
+        <span class="k">return</span> <span class="n">x</span></div>
+
+    <span class="k">def</span> <span class="nf">__getstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">d</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">d</span><span class="p">[</span><span class="s2">&quot;X&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">del</span> <span class="n">d</span><span class="p">[</span><span class="s2">&quot;file&quot;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">d</span></div>
+
+
+<div class="viewcode-block" id="plot_scores"><a class="viewcode-back" href="../../../alien.benchmarks.html#alien.benchmarks.metrics.plot_scores">[docs]</a><span class="k">def</span> <span class="nf">plot_scores</span><span class="p">(</span>
+    <span class="o">*</span><span class="n">XY</span><span class="p">,</span>
+    <span class="n">xlabel</span><span class="o">=</span><span class="s2">&quot;Compounds / Number&quot;</span><span class="p">,</span>
+    <span class="n">ylabel</span><span class="o">=</span><span class="s2">&quot;Error / RMSE&quot;</span><span class="p">,</span>
+    <span class="n">show_err</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">confidence</span><span class="o">=</span><span class="mf">0.95</span><span class="p">,</span>
+    <span class="n">grid</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">ticks</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">tight_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">dpi</span><span class="o">=</span><span class="mi">800</span><span class="p">,</span>
+    <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+    <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span>
+    <span class="n">xlim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">ylim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">xmin</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">xmax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">ymin</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">ymax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">show</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">block</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">save</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">file_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">legend</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">axes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns the `matplotlib.axes.Axes` it is drawing on. You can use this to modify the</span>
+<span class="sd">    plot after-the-fact.</span>
+
+<span class="sd">    :param xlabel: Label for x-axis</span>
+<span class="sd">    :param ylabel: Label for y-axis</span>
+<span class="sd">    :param show_err: If True, shows error bands when available</span>
+<span class="sd">    :param confidence: The confidence threshold of the error bands</span>
+<span class="sd">    :param grid: If True, show a dashed gray grid</span>
+<span class="sd">    :param ticks: If True, show ticks on the axes</span>
+<span class="sd">    :param tight_layout: If True, calls matplotlib&#39;s `tight_layout`</span>
+<span class="sd">    :param dpi: DPI for saved figures</span>
+<span class="sd">    :param figsize: Size of the figure in matplotlib units</span>
+<span class="sd">    :param fontsize: Font size for legend, axis labels</span>
+<span class="sd">    :param xlim: Can be either an order pair `(xmin, xmax)`, or a dictionary</span>
+<span class="sd">        `{&#39;xmin&#39;:xmin, &#39;xmax&#39;:xmax}`. In fact, the dictionary may have any</span>
+<span class="sd">        subset of the arguments to `matplotlib.axes.Axes.set_xlim`.</span>
+<span class="sd">    :param ylim: Like xlim, but with `(ymin, ymax)`.</span>
+<span class="sd">    :param xmin, xmax, ymin, ymax: Alternatively, you can pass plot limits directly</span>
+<span class="sd">        as kwargs.</span>
+<span class="sd">    :param show: Whether to call `matplotlib.pyplot.show`</span>
+<span class="sd">    :param block: Whether the plot display should be blocking. Defaults to True.</span>
+<span class="sd">    :param save: If `save == True`, or if `file` is given, saves the figure to a</span>
+<span class="sd">        file. If `file` is specified, uses that filename. If `file` is not specified,</span>
+<span class="sd">        builds a filename be sanitizing `title` or `name`.</span>
+<span class="sd">    :param file_path:  See above</span>
+<span class="sd">    :param title:</span>
+<span class="sd">    :param name: `title` and `name` are synonyms, specifying the plot title</span>
+<span class="sd">    :param legend: Whether or not to show a legend</span>
+<span class="sd">    :param axes: You can specify matplotlib axes to plot into</span>
+
+<span class="sd">    Additional keyword arguments are passed to the `plot` function.</span>
+
+<span class="sd">    Note about titles/filenames: If you just want to give a name for the purpose of</span>
+<span class="sd">    saving to a unique file, specify `file`. If you also want to show a title, there&#39;s</span>
+<span class="sd">    no need to specify `file`---you can just specify `title` or `name`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># load/process scores</span>
+    <span class="n">scores</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">xy</span> <span class="ow">in</span> <span class="n">XY</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">xy</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">xy</span> <span class="o">=</span> <span class="n">Score</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">xy</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">xy</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">xy</span><span class="p">,</span> <span class="n">Score</span><span class="p">):</span>
+            <span class="n">xy</span> <span class="o">=</span> <span class="n">Score</span><span class="p">(</span><span class="o">*</span><span class="n">xy</span><span class="p">)</span>
+        <span class="n">scores</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">xy</span><span class="p">)</span>
+
+
+    <span class="c1"># set up figure and axes</span>
+    <span class="k">if</span> <span class="n">axes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="n">figsize</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="n">figsize</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">grid</span><span class="p">:</span>
+        <span class="n">axes</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;gray&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.35</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">ticks</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="n">fontsize</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">yticks</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="n">fontsize</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">dpi</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s2">&quot;figure.dpi&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dpi</span>
+
+    <span class="k">if</span> <span class="n">ylabel</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">({</span><span class="n">s</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">scores</span><span class="p">})</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">ylabel</span> <span class="o">=</span> <span class="n">scores</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span>
+        <span class="k">if</span> <span class="n">legend</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">legend</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">if</span> <span class="n">legend</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">legend</span> <span class="o">=</span> <span class="kc">True</span>
+
+
+    <span class="c1"># Plot the scores:</span>
+    <span class="k">for</span> <span class="n">score</span> <span class="ow">in</span> <span class="n">scores</span><span class="p">:</span>
+        <span class="n">kwargs_copy</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">kwargs_copy</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">score</span><span class="o">.</span><span class="n">plot_args</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">score</span><span class="o">.</span><span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">legend</span><span class="p">:</span>
+            <span class="n">kwargs_copy</span><span class="p">[</span><span class="s2">&quot;label&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">score</span><span class="o">.</span><span class="n">name</span>
+        <span class="k">if</span> <span class="n">show_err</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">score</span><span class="p">,</span> <span class="s2">&quot;err&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">score</span><span class="o">.</span><span class="n">err</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">s_y</span><span class="p">,</span> <span class="n">s_err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">score</span><span class="o">.</span><span class="n">y</span><span class="p">),</span> <span class="n">conf_int</span><span class="p">(</span><span class="n">confidence</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">score</span><span class="o">.</span><span class="n">err</span><span class="p">))</span>
+            <span class="n">axes</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">score</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">s_y</span> <span class="o">-</span> <span class="n">s_err</span><span class="p">,</span> <span class="n">s_y</span> <span class="o">+</span> <span class="n">s_err</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+        <span class="n">axes</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">score</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">score</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs_copy</span><span class="p">)</span>
+
+
+    <span class="c1"># Format the axes:</span>
+    <span class="k">if</span> <span class="n">xmin</span> <span class="ow">or</span> <span class="n">xmax</span><span class="p">:</span>
+        <span class="n">xlim</span> <span class="o">=</span> <span class="p">(</span><span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">xlim</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+        <span class="n">xlim</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;xmin&quot;</span><span class="p">:</span> <span class="n">xlim</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;xmax&quot;</span><span class="p">:</span> <span class="n">xlim</span><span class="p">[</span><span class="mi">1</span><span class="p">]}</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">xlim</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="n">axes</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="o">**</span><span class="n">xlim</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">ymin</span> <span class="ow">or</span> <span class="n">ymax</span><span class="p">:</span>
+        <span class="n">ylim</span> <span class="o">=</span> <span class="p">(</span><span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ylim</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+        <span class="n">ylim</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;ymin&quot;</span><span class="p">:</span> <span class="n">ylim</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;ymax&quot;</span><span class="p">:</span> <span class="n">ylim</span><span class="p">[</span><span class="mi">1</span><span class="p">]}</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ylim</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="n">axes</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="o">**</span><span class="n">ylim</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">xlabel</span><span class="p">:</span>
+        <span class="n">axes</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="n">xlabel</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="n">fontsize</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">ylabel</span><span class="p">:</span>
+        <span class="n">axes</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">ylabel</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="n">fontsize</span><span class="p">)</span>
+    <span class="n">axes</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">name</span> <span class="ow">or</span> <span class="n">title</span><span class="p">:</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="n">title</span> <span class="k">if</span> <span class="n">title</span> <span class="k">else</span> <span class="n">name</span>
+        <span class="n">axes</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">tight_layout</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+
+
+    <span class="c1"># Save figure:</span>
+    <span class="k">if</span> <span class="n">save</span> <span class="ow">or</span> <span class="n">file_path</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">file_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="p">(</span>
+                <span class="n">title</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="p">),</span> <span class="s2">&quot;You need to specify a filename or title if you&#39;re going to save.&quot;</span>
+
+            <span class="n">file_path</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">title</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;_&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\w&quot;</span><span class="p">,</span> <span class="n">c</span><span class="p">)])</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                <span class="o">+</span> <span class="s2">&quot;.pdf&quot;</span>
+            <span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="n">dpi</span><span class="p">)</span>
+
+
+    <span class="c1"># Finally, show the plot:</span>
+    <span class="k">if</span> <span class="n">show</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">block</span><span class="o">=</span><span class="n">block</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">axes</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

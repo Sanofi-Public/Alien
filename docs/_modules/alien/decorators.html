@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>alien.decorators &mdash; ALIEN 1.1.2 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            ALIEN
+          </a>
+              <div class="version">
+                1.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../active_learning.html">What is active learning?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../alien.models.html">alien.models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../alien.selection.html">alien.selection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../alien.benchmarks.html">alien.benchmarks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../alien.data.html">alien.data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../alien.sample_generation.html">alien.sample_generation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">ALIEN</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">alien.decorators</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for alien.decorators</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span><span class="p">,</span> <span class="n">wraps</span>
+<span class="kn">from</span> <span class="nn">inspect</span> <span class="kn">import</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">signature</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">.sample_generation.generator</span> <span class="kn">import</span> <span class="n">SampleGenerator</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">flatten</span><span class="p">,</span> <span class="n">reshape</span><span class="p">,</span> <span class="n">isint</span>
+<span class="kn">from</span> <span class="nn">.classes</span> <span class="kn">import</span> <span class="n">abstract_group</span>
+
+
+<div class="viewcode-block" id="default_decorator"><a class="viewcode-back" href="../../alien.html#alien.decorators.default_decorator">[docs]</a><span class="k">def</span> <span class="nf">default_decorator</span><span class="p">(</span><span class="n">dec</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Enhances a parametrized decorator by giving it the following</span>
+<span class="sd">    functionality:</span>
+
+<span class="sd">    If the decorator is applied directly to a function, without any</span>
+<span class="sd">    parameters specified, then it decorates the function in the usual</span>
+<span class="sd">    way, with default values for the parameters.</span>
+
+<span class="sd">    If the decorator is passed parameters, then it returns a new</span>
+<span class="sd">    decorator (with the given parameter values), able to accept a</span>
+<span class="sd">    function to decorate.</span>
+
+<span class="sd">    In other words, if we have</span>
+
+<span class="sd">    @default_decorator</span>
+<span class="sd">    decorator(fn, a=1, b=2, ...):</span>
+<span class="sd">        ...</span>
+
+<span class="sd">    then</span>
+
+<span class="sd">    @decorator</span>
+<span class="sd">    def fn(...):</span>
+<span class="sd">        ...</span>
+
+<span class="sd">    gives the usual behaviour for a decorator, but</span>
+
+<span class="sd">    @decorator(3, b=4)</span>
+<span class="sd">    def fn(...):</span>
+<span class="sd">        ...</span>
+
+<span class="sd">    gives us the function</span>
+
+<span class="sd">    decorator(fn, a=3, b=4)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">argnames</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">signature</span><span class="p">(</span><span class="n">dec</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">wrapped_dec</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">callable</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="k">return</span> <span class="n">dec</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">argnames</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">args</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">partial</span><span class="p">(</span><span class="n">dec</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">wrapped_dec</span></div>
+
+
+<div class="viewcode-block" id="flatten_batch"><a class="viewcode-back" href="../../alien.html#alien.decorators.flatten_batch">[docs]</a><span class="nd">@default_decorator</span>
+<span class="k">def</span> <span class="nf">flatten_batch</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">bdim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">to_flatten</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">is_method</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">keep_self_dim</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">degree</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Decorator which &#39;flattens&#39; batch dimensions, and</span>
+<span class="sd">    restores their shape upon return. Used as a convenience</span>
+<span class="sd">    by functions which need (or want) to assume there is exactly</span>
+<span class="sd">    one batch dimension.</span>
+
+<span class="sd">    :param bdim: number of batch dimensions to flatten.</span>
+<span class="sd">        If negative, keeps that many final dimensions</span>
+<span class="sd">        unflattened, i.e., the batch dimensions is</span>
+<span class="sd">            `args[0].ndim + bdim`.</span>
+<span class="sd">        If `is_method` and `keep_self_dim` are both True, then</span>
+<span class="sd">        `bdim` modifies the batch dimension computed from</span>
+<span class="sd">        self.ndim and args[0].ndim (as explained in `keep_self_dim`).</span>
+
+<span class="sd">    :param keep_self_dim: If True (and if `is_method` is True also),</span>
+<span class="sd">        computes the batch dimensions as the difference</span>
+<span class="sd">            `args[0].ndim - self.ndim + bdim`.</span>
+
+<span class="sd">    :param is_method: If True, treat the first argument as `self`, and</span>
+<span class="sd">        count other arguments from the second position. If `is_method`</span>
+<span class="sd">        is True as well as `keep_self_dim`, this triggers the</span>
+<span class="sd">        batch dimension calculation explained in `keep_self_dim`.</span>
+<span class="sd">        By default, `is_method = (argnames[0] == &#39;self&#39;)`.</span>
+
+<span class="sd">    :param to_flatten: number of arguments (not including &#39;self&#39; if</span>
+<span class="sd">        `fn` is a method) to be flattened in this way. You can also</span>
+<span class="sd">        provide a sequence of argument names or numbers. Defaults to 1.</span>
+
+<span class="sd">    :param degree: tensor degree of the output over the batch dimensions.</span>
+<span class="sd">        Concretely, `degree` specifies how many dimensions of the raw</span>
+<span class="sd">        output should be reshaped into copies of the batch shape.</span>
+<span class="sd">        Defaults to 1, which is correct if the function provides an</span>
+<span class="sd">        output for each sample in the batch. 0 would be correct if, eg.,</span>
+<span class="sd">        the function aggregates all the samples into a summary statistic.</span>
+<span class="sd">        2 would be correct if, eg., the function outputs a matrix over</span>
+<span class="sd">        the samples.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sig</span> <span class="o">=</span> <span class="n">signature</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
+    <span class="n">argnames</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sig</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">is_method</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">is_method</span> <span class="o">=</span> <span class="n">argnames</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;self&quot;</span>
+
+    <span class="k">if</span> <span class="n">is_method</span><span class="p">:</span>
+        <span class="n">a0</span> <span class="o">=</span> <span class="n">argnames</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">a0</span> <span class="o">=</span> <span class="n">argnames</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">keep_self_dim</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="n">to_flatten</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">to_flatten</span><span class="p">)</span> <span class="k">if</span> <span class="n">isint</span><span class="p">(</span><span class="n">to_flatten</span><span class="p">)</span> <span class="k">else</span> <span class="n">to_flatten</span>
+    <span class="n">to_flatten</span> <span class="o">=</span> <span class="p">[</span><span class="n">argnames</span><span class="p">[</span><span class="n">n</span> <span class="o">+</span> <span class="n">is_method</span><span class="p">]</span> <span class="k">if</span> <span class="n">isint</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="k">else</span> <span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">to_flatten</span><span class="p">]</span>
+
+    <span class="nd">@wraps</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">flat_fn</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">bound_args</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="n">bound_args</span><span class="o">.</span><span class="n">arguments</span>
+
+        <span class="n">b_dim</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;bdim&quot;</span><span class="p">,</span> <span class="n">bdim</span><span class="p">)</span>  <span class="c1"># If the end-user passes a bdim value, use that instead</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="n">a0</span><span class="p">],</span> <span class="s2">&quot;ndim&quot;</span><span class="p">):</span>
+            <span class="n">b_dim</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">elif</span> <span class="n">is_method</span> <span class="ow">and</span> <span class="n">keep_self_dim</span><span class="p">:</span>
+            <span class="bp">self</span> <span class="o">=</span> <span class="n">bound_args</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">b_dim</span> <span class="o">+=</span> <span class="n">args</span><span class="p">[</span><span class="n">a0</span><span class="p">]</span><span class="o">.</span><span class="n">ndim</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">ndim</span>
+            <span class="k">assert</span> <span class="p">(</span>
+                <span class="n">b_dim</span> <span class="o">&lt;=</span> <span class="n">args</span><span class="p">[</span><span class="n">a0</span><span class="p">]</span><span class="o">.</span><span class="n">ndim</span>
+            <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Computed batch ndim </span><span class="si">{</span><span class="n">b_dim</span><span class="si">}</span><span class="s2"> is greater than input ndim </span><span class="si">{</span><span class="n">args</span><span class="p">[</span><span class="n">a0</span><span class="p">]</span><span class="o">.</span><span class="n">ndim</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="k">elif</span> <span class="n">b_dim</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">b_dim</span> <span class="o">+=</span> <span class="n">args</span><span class="p">[</span><span class="n">a0</span><span class="p">]</span><span class="o">.</span><span class="n">ndim</span>
+
+        <span class="c1"># shortcut for most common case:</span>
+        <span class="k">if</span> <span class="n">b_dim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">fn</span><span class="p">(</span><span class="o">*</span><span class="n">bound_args</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">bound_args</span><span class="o">.</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="n">bshape</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="n">a0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="n">b_dim</span><span class="p">]</span>
+
+        <span class="n">args</span><span class="o">.</span><span class="n">update</span><span class="p">((</span><span class="n">n</span><span class="p">,</span> <span class="n">flatten</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="n">n</span><span class="p">],</span> <span class="n">b_dim</span><span class="p">))</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">to_flatten</span><span class="p">)</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="n">fn</span><span class="p">(</span><span class="o">*</span><span class="n">bound_args</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">bound_args</span><span class="o">.</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">reshape</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">degree</span> <span class="o">*</span> <span class="n">bshape</span> <span class="o">+</span> <span class="n">v</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">degree</span><span class="p">:])</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">result</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">reshape</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">degree</span> <span class="o">*</span> <span class="n">bshape</span> <span class="o">+</span> <span class="n">result</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">degree</span><span class="p">:])</span>
+
+    <span class="k">return</span> <span class="n">flat_fn</span></div>
+
+
+<div class="viewcode-block" id="get_args"><a class="viewcode-back" href="../../alien.html#alien.decorators.get_args">[docs]</a><span class="k">def</span> <span class="nf">get_args</span><span class="p">(</span><span class="n">other_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">exclude</span><span class="o">=</span><span class="p">{}):</span>
+    <span class="n">argnames</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">signature</span><span class="p">(</span><span class="n">other_fn</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">exclude</span><span class="p">)</span>
+    <span class="kn">from</span> <span class="nn">utils</span> <span class="kn">import</span> <span class="n">dict_pop</span>
+    <span class="k">def</span> <span class="nf">get_args_decorator</span><span class="p">(</span><span class="n">fn</span><span class="p">):</span>
+        <span class="nd">@wraps</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">wrapped_fn</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="n">dict_pop</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="o">*</span><span class="n">argnames</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">fn</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">wrapped_fn</span>
+    <span class="k">return</span> <span class="n">get_args_decorator</span></div>
+
+
+<div class="viewcode-block" id="do_normalize"><a class="viewcode-back" href="../../alien.html#alien.decorators.do_normalize">[docs]</a><span class="k">def</span> <span class="nf">do_normalize</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">bdim</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">euclidean</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="n">bdims</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">bdim</span><span class="p">))</span> <span class="k">if</span> <span class="n">bdim</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="k">else</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">ndim</span> <span class="o">+</span> <span class="n">bdim</span><span class="p">))</span>
+    <span class="n">X_std</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">X</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="n">bdims</span><span class="p">)</span>
+    <span class="n">X_std</span><span class="p">[</span><span class="n">X_std</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="n">euclidean</span><span class="p">:</span>
+        <span class="n">X_std</span> <span class="o">*=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="n">bdim</span><span class="p">]))</span>
+    <span class="k">return</span> <span class="n">X</span> <span class="o">/</span> <span class="n">X_std</span></div>
+
+
+<div class="viewcode-block" id="sig_append"><a class="viewcode-back" href="../../alien.html#alien.decorators.sig_append">[docs]</a><span class="k">def</span> <span class="nf">sig_append</span><span class="p">(</span>
+    <span class="n">fn</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="n">Parameter</span><span class="o">.</span><span class="n">KEYWORD_ONLY</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">Parameter</span><span class="o">.</span><span class="n">empty</span><span class="p">,</span> <span class="n">annotation</span><span class="o">=</span><span class="n">Parameter</span><span class="o">.</span><span class="n">empty</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Appends a new parameter to the signature of `fn`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sig</span> <span class="o">=</span> <span class="n">signature</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
+    <span class="n">fn</span><span class="o">.</span><span class="n">__signature__</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+        <span class="n">parameters</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">sig</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="o">+</span> <span class="p">[</span>
+            <span class="n">Parameter</span><span class="p">(</span>
+                <span class="n">name</span><span class="p">,</span>
+                <span class="n">kind</span><span class="p">,</span>
+                <span class="n">default</span><span class="o">=</span><span class="n">default</span><span class="p">,</span>
+                <span class="n">annotation</span><span class="o">=</span><span class="n">annotation</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">]</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">fn</span></div>
+
+
+<div class="viewcode-block" id="normalize_args"><a class="viewcode-back" href="../../alien.html#alien.decorators.normalize_args">[docs]</a><span class="nd">@default_decorator</span>
+<span class="k">def</span> <span class="nf">normalize_args</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">to_norm</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">bdim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">euclidean</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">keep_self_dim</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Decorator that normalizes the argument(s) to a function, in each</span>
+<span class="sd">    dimension.</span>
+
+<span class="sd">    :param to_norm: number of arguments (after &#39;self&#39;) to</span>
+<span class="sd">        normalize. May also be a list of integers and strings (for</span>
+<span class="sd">        keyword args). Defaults to 1.</span>
+<span class="sd">    :param bdim: number of batch dimensions to normalize over. May be negative,</span>
+<span class="sd">        in which case it specified how many of the last dimensions *not* to</span>
+<span class="sd">        normalize over. If `keep_self_dim` is `True`, then this number is added</span>
+<span class="sd">        to the number of batch dimensions determined by excluding `self.ndim`.</span>
+
+<span class="sd">        Defaults to -1 if keep_self_dim is False or `fn` isn&#39;t a method, else</span>
+<span class="sd">        defaults to 0 (keeping exactly `self.ndim` dimensions).</span>
+<span class="sd">    :param keep_self_dim: if True, keeps `self.ndim` final dimensions, and normalizes</span>
+<span class="sd">        over the others. In other words, the number of batch dimensions will be</span>
+<span class="sd">            X.ndim - self.ndim + bdim</span>
+<span class="sd">    :param euclidean: whether to divide by sqrt(N) (N is the size</span>
+<span class="sd">        of the feature dimension). Should be true if you&#39;ll be using</span>
+<span class="sd">        Euclidean distances. Defaults to False.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sig</span> <span class="o">=</span> <span class="n">signature</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
+    <span class="n">argnames</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sig</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span>
+    <span class="n">is_method</span> <span class="o">=</span> <span class="n">_check_is_method</span><span class="p">(</span><span class="n">argnames</span><span class="p">)</span>
+
+    <span class="n">to_norm</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">to_norm</span><span class="p">)</span> <span class="k">if</span> <span class="n">isint</span><span class="p">(</span><span class="n">to_norm</span><span class="p">)</span> <span class="k">else</span> <span class="n">to_norm</span>
+    <span class="n">to_norm</span> <span class="o">=</span> <span class="p">[</span><span class="n">_get_arg_name</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">argnames</span><span class="p">,</span> <span class="n">is_method</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">to_norm</span><span class="p">]</span>
+
+    <span class="n">pass_normalize</span> <span class="o">=</span> <span class="s2">&quot;normalize&quot;</span> <span class="ow">in</span> <span class="n">argnames</span>
+
+    <span class="nd">@wraps</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">wrapped_fn</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">normalize</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;normalize&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">pass_normalize</span> <span class="ow">and</span> <span class="s2">&quot;normalize&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="k">del</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;normalize&quot;</span><span class="p">]</span>
+
+        <span class="n">bound_args</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="n">bound_args</span><span class="o">.</span><span class="n">arguments</span>
+
+        <span class="n">b_dim</span> <span class="o">=</span> <span class="n">_get_batch_dim</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">is_method</span><span class="p">,</span> <span class="n">bdim</span><span class="p">,</span> <span class="n">keep_self_dim</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">normalize</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">to_norm</span><span class="p">:</span>
+                <span class="n">args</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="o">=</span> <span class="n">do_normalize</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="n">a</span><span class="p">],</span> <span class="n">bdim</span><span class="o">=</span><span class="n">b_dim</span><span class="p">,</span> <span class="n">euclidean</span><span class="o">=</span><span class="n">euclidean</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">fn</span><span class="p">(</span><span class="o">*</span><span class="n">bound_args</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">bound_args</span><span class="o">.</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">pass_normalize</span><span class="p">:</span>
+        <span class="c1"># add `normalize` parameter to wrapped signature:</span>
+        <span class="n">sig_append</span><span class="p">(</span><span class="n">wrapped_fn</span><span class="p">,</span> <span class="s2">&quot;normalize&quot;</span><span class="p">,</span> <span class="n">Parameter</span><span class="o">.</span><span class="n">KEYWORD_ONLY</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">annotation</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">wrapped_fn</span></div>
+
+
+<span class="k">def</span> <span class="nf">_check_is_method</span><span class="p">(</span><span class="n">argnames</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper function to check whether call to normalize_args is from a class method or function.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">argnames</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;self&quot;</span> <span class="k">if</span> <span class="n">argnames</span> <span class="k">else</span> <span class="kc">False</span>
+
+
+<span class="k">def</span> <span class="nf">_get_arg_name</span><span class="p">(</span><span class="n">arg</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">argnames</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">is_method</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper for normalize_args to get argument name.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">isint</span><span class="p">(</span><span class="n">arg</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">argnames</span><span class="p">[</span><span class="n">arg</span> <span class="o">+</span> <span class="n">is_method</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">arg</span>
+
+
+<span class="k">def</span> <span class="nf">_get_batch_dim</span><span class="p">(</span>
+    <span class="n">args</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">is_method</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">batch_dim</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">keep_self_dim</span><span class="p">:</span> <span class="nb">bool</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper function to get batch dimension for normalize_args.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">is_method</span> <span class="ow">and</span> <span class="n">keep_self_dim</span><span class="p">:</span>
+        <span class="k">return</span> <span class="o">-</span><span class="n">args</span><span class="p">[</span><span class="s2">&quot;self&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">ndim</span> <span class="k">if</span> <span class="n">batch_dim</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">batch_dim</span> <span class="o">-</span> <span class="n">args</span><span class="p">[</span><span class="s2">&quot;self&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">ndim</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span> <span class="k">if</span> <span class="n">batch_dim</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">batch_dim</span>
+
+
+<div class="viewcode-block" id="get_Xy"><a class="viewcode-back" href="../../alien.html#alien.decorators.get_Xy">[docs]</a><span class="k">def</span> <span class="nf">get_Xy</span><span class="p">(</span><span class="n">fn</span><span class="p">):</span> <span class="c1"># NOSONAR</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This decorator ensures that a method gets appropriate `X` and `y`</span>
+<span class="sd">    values. A method decorated in this way can assume that its `X` (or `x`)</span>
+<span class="sd">    and `y` arguments have nontrivial values, drawn from an appropriate</span>
+<span class="sd">    source.</span>
+
+<span class="sd">    If both `X` (or `x`) and `y` are passed in (Nones don&#39;t count),</span>
+<span class="sd">    then all&#39;s well. If neither are passed in, then this wrapper looks for</span>
+<span class="sd">    them in `self.X` and `self.y`.</span>
+
+<span class="sd">    If an `X` value can be found, but no `y` value, this wrapper treats</span>
+<span class="sd">    `X` as combined `data`, and tries to split it into `data.X` and `data.y`.</span>
+<span class="sd">    Failing that, it tries to take `X = data[:,:-1]` and `y = data[:,-1]`.</span>
+
+<span class="sd">    If none of this can be accomplished, this wrapper raises a `ValueError`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sig</span> <span class="o">=</span> <span class="n">signature</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sig</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span>
+
+    <span class="n">X_name</span><span class="p">,</span> <span class="n">y_name</span> <span class="o">=</span> <span class="n">_get_xy_names</span><span class="p">(</span><span class="n">names</span><span class="p">)</span>
+
+    <span class="nd">@wraps</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">wrapped_fn</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">bound_args</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="n">bound_args</span><span class="o">.</span><span class="n">arguments</span>
+
+        <span class="k">if</span> <span class="n">X_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">args</span> <span class="ow">or</span> <span class="n">args</span><span class="p">[</span><span class="n">X_name</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">args</span><span class="p">[</span><span class="n">X_name</span><span class="p">]</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X_name</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y_name</span><span class="p">):</span>
+                    <span class="n">args</span><span class="p">[</span><span class="n">y_name</span><span class="p">]</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y_name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">)</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;You didn&#39;t pass any data to `</span><span class="si">{</span><span class="n">fn</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">`, and we couldn&#39;t find it in `self`.&quot;</span>
+                <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">y_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">args</span> <span class="ow">or</span> <span class="n">args</span><span class="p">[</span><span class="n">y_name</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="n">X_name</span><span class="p">]</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">args</span><span class="p">[</span><span class="n">X_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">X</span>
+                <span class="n">args</span><span class="p">[</span><span class="n">y_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">y</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">AttributeError</span><span class="p">):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">args</span><span class="p">[</span><span class="n">X_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="n">args</span><span class="p">[</span><span class="n">y_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">)</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;You didn&#39;t pass a separate y-value, but we can&#39;t extract `X` and `y` from the data of type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span> <span class="kn">from</span> <span class="nn">exc</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="n">X_name</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+
+        <span class="k">return</span> <span class="n">fn</span><span class="p">(</span><span class="o">*</span><span class="n">bound_args</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">bound_args</span><span class="o">.</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">wrapped_fn</span></div>
+
+
+<span class="k">def</span> <span class="nf">_get_xy_names</span><span class="p">(</span><span class="n">names</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper function to get names of features and targets.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="s2">&quot;X&quot;</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
+        <span class="n">X_name</span> <span class="o">=</span> <span class="s2">&quot;X&quot;</span>
+    <span class="k">elif</span> <span class="s2">&quot;x&quot;</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
+        <span class="n">X_name</span> <span class="o">=</span> <span class="s2">&quot;x&quot;</span>
+    <span class="k">elif</span> <span class="n">names</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;self&quot;</span><span class="p">:</span>
+        <span class="n">X_name</span> <span class="o">=</span> <span class="n">names</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">X_name</span> <span class="o">=</span> <span class="n">names</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="s2">&quot;y&quot;</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
+        <span class="n">y_name</span> <span class="o">=</span> <span class="s2">&quot;y&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">y_name</span> <span class="o">=</span> <span class="n">names</span><span class="p">[</span><span class="n">names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">X_name</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">X_name</span><span class="p">,</span> <span class="n">y_name</span>
+
+
+<div class="viewcode-block" id="RecursionContext"><a class="viewcode-back" href="../../alien.html#alien.decorators.RecursionContext">[docs]</a><span class="k">class</span> <span class="nc">RecursionContext</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Raises an error if `fn` is called recursively.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fn</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fn</span> <span class="o">=</span> <span class="n">fn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">error</span> <span class="o">=</span> <span class="ne">RecursionError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">fn</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> doesn&#39;t allow recursion, but was called recursively.&quot;</span><span class="p">)</span> \
+            <span class="k">if</span> <span class="n">error</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">error</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="s1">&#39;_recursed&#39;</span><span class="p">):</span>
+            <span class="n">fn</span><span class="o">.</span><span class="n">_recursed</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fn</span><span class="o">.</span><span class="n">_recursed</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">error</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fn</span><span class="o">.</span><span class="n">_recursed</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_value</span><span class="p">,</span> <span class="n">traceback</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fn</span><span class="o">.</span><span class="n">_recursed</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="no_recursion"><a class="viewcode-back" href="../../alien.html#alien.decorators.no_recursion">[docs]</a><span class="nd">@default_decorator</span>
+<span class="k">def</span> <span class="nf">no_recursion</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">rc</span> <span class="o">=</span> <span class="n">RecursionContext</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
+
+    <span class="nd">@wraps</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">wrapped_fn</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">rc</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">fn</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">wrapped_fn</span></div>
+
+
+<div class="viewcode-block" id="get_defaults_from_self"><a class="viewcode-back" href="../../alien.html#alien.decorators.get_defaults_from_self">[docs]</a><span class="k">def</span> <span class="nf">get_defaults_from_self</span><span class="p">(</span><span class="n">fn</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Decorator that enhances a method so that if arguments are</span>
+<span class="sd">    not passed in, then it will look for argument values in</span>
+<span class="sd">    self.&#39;argname&#39;</span>
+
+<span class="sd">    This functionality is invoked on arguments with default</span>
+<span class="sd">    values None or NEED (see below; must include NEED from this</span>
+<span class="sd">    module to use this). In the latter case, an exception is</span>
+<span class="sd">    raised if an argument is neither passed directly nor can it</span>
+<span class="sd">    be found at self.&#39;argname&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sig</span> <span class="o">=</span> <span class="n">signature</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sig</span><span class="o">.</span><span class="n">parameters</span><span class="p">)[</span><span class="mi">1</span><span class="p">:]</span>
+    <span class="n">defaults</span> <span class="o">=</span> <span class="p">{</span><span class="n">n</span><span class="p">:</span> <span class="n">sig</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">n</span><span class="p">]</span><span class="o">.</span><span class="n">default</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">names</span><span class="p">}</span>
+    <span class="n">defaults</span> <span class="o">=</span> <span class="p">{</span><span class="n">n</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">defaults</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">v</span> <span class="o">==</span> <span class="n">NEED</span><span class="p">}</span>
+
+    <span class="nd">@wraps</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">wrapped_fn</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">bound_args</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="n">bound_args</span><span class="o">.</span><span class="n">arguments</span>
+
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">defaults</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">v</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">v</span> <span class="ow">is</span> <span class="n">NEED</span><span class="p">)</span> <span class="ow">and</span> <span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">default</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">default</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">args</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">default</span>
+                <span class="k">elif</span> <span class="n">v</span> <span class="ow">is</span> <span class="n">NEED</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2"> must either be passed into </span><span class="si">{</span><span class="n">fn</span><span class="o">.</span><span class="vm">__qualname__</span><span class="si">}</span><span class="s2"> or into __init__&quot;</span>
+                    <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">fn</span><span class="p">(</span><span class="o">*</span><span class="n">bound_args</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">bound_args</span><span class="o">.</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">wrapped_fn</span></div>
+
+
+<div class="viewcode-block" id="NEED"><a class="viewcode-back" href="../../alien.html#alien.decorators.NEED">[docs]</a><span class="k">def</span> <span class="nf">NEED</span><span class="p">():</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;NEED is used only as a unique reference and should not be called.&quot;</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

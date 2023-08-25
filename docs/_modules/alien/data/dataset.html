@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>alien.data.dataset &mdash; ALIEN 1.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            ALIEN
+          </a>
+              <div class="version">
+                1.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../active_learning.html">What is active learning?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../alien.models.html">alien.models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../alien.selection.html">alien.selection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../alien.benchmarks.html">alien.benchmarks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../alien.data.html">alien.data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../alien.sample_generation.html">alien.sample_generation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">ALIEN</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">alien.data.dataset</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for alien.data.dataset</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Module with dataset (sub-)classes for storing data.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1"># TODO in this module:</span>
+<span class="c1"># - join function for DictDataset</span>
+<span class="c1"># - check join implementation for TupleDataset</span>
+<span class="c1"># - concatenate function for TupleDataset</span>
+<span class="c1"># - numpy warning in concatenate</span>
+<span class="c1"># - specify exceptions</span>
+<span class="c1"># - Dataset.from_data parameters align with TeachableDataset.from_data</span>
+<span class="c1"># - other smaller todos throughout</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABCMeta</span><span class="p">,</span> <span class="n">abstractmethod</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">MutableSequence</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">numpy.random</span> <span class="kn">import</span> <span class="n">BitGenerator</span><span class="p">,</span> <span class="n">Generator</span><span class="p">,</span> <span class="n">SeedSequence</span>
+<span class="kn">from</span> <span class="nn">numpy.typing</span> <span class="kn">import</span> <span class="n">ArrayLike</span>
+
+<span class="k">if</span> <span class="s2">&quot;torch&quot;</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">torch</span>
+
+<span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">add_slice</span><span class="p">,</span> <span class="n">reshape</span><span class="p">,</span> <span class="n">isint</span><span class="p">,</span> <span class="n">update_copy</span>
+
+
+<div class="viewcode-block" id="Dataset"><a class="viewcode-back" href="../../../alien.data.html#alien.data.dataset.Dataset">[docs]</a><span class="k">class</span> <span class="nc">Dataset</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Abstract interface to a readable dataset.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">cls</span> <span class="o">==</span> <span class="n">Dataset</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">Dataset</span><span class="o">.</span><span class="n">from_data</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">has_Xy</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bdim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">has_Xy</span> <span class="o">=</span> <span class="n">has_Xy</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bdim</span> <span class="o">=</span> <span class="n">bdim</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+<div class="viewcode-block" id="Dataset.find"><a class="viewcode-back" href="../../../alien.data.html#alien.data.dataset.Dataset.find">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">first</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Finds instances of `value` in this dataset.</span>
+<span class="sd">        If first is True, returns the index of the first</span>
+<span class="sd">        occurence (or None if not found), otherwise returns</span>
+<span class="sd">        an iterable of indices of all occurences.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s2">&quot;Default iterator implementation&quot;</span>
+        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)))</span>
+
+<div class="viewcode-block" id="Dataset.from_data"><a class="viewcode-back" href="../../../alien.data.html#alien.data.dataset.Dataset.from_data">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">from_data</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a Dataset built from the given data and other args.</span>
+<span class="sd">        Arguments and functionality are exactly like</span>
+<span class="sd">        TeachableDataset.from_data</span>
+<span class="sd">        In fact, at present, this method just calls</span>
+<span class="sd">        TeachableDataset.from_data</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># TODO: pylint doesn&#39;t like that the parent class uses *args, **kwargs.</span>
+        <span class="c1"># Need to figure out a general way that doesn&#39;t break this.</span>
+        <span class="n">dataset</span> <span class="o">=</span> <span class="n">TeachableDataset</span><span class="o">.</span><span class="n">from_data</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">dataset</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">X</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return features.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_Xy</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">Dataset</span><span class="o">.</span><span class="n">from_data</span><span class="p">(</span><span class="bp">self</span><span class="p">[:,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">),)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdim</span> <span class="o">+</span> <span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),)</span>
+            <span class="k">return</span> <span class="n">Dataset</span><span class="o">.</span><span class="n">from_data</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">y</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return targets.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_Xy</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">Dataset</span><span class="o">.</span><span class="n">from_data</span><span class="p">(</span><span class="bp">self</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">),)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdim</span> <span class="o">+</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,)</span>
+            <span class="k">return</span> <span class="n">Dataset</span><span class="o">.</span><span class="n">from_data</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    
+<div class="viewcode-block" id="Dataset.check_Xy"><a class="viewcode-back" href="../../../alien.data.html#alien.data.dataset.Dataset.check_Xy">[docs]</a>    <span class="k">def</span> <span class="nf">check_Xy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_Xy</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Dataset doesn&#39;t store separate `X` or `y` columns.&quot;</span><span class="p">)</span></div>
+
+    <span class="nd">@property</span>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Abstract method for returning shape.&quot;&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">ndim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns: int: number of dimensions&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">batch_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdim</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">feature_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">bdim</span> <span class="p">:]</span>
+
+<div class="viewcode-block" id="Dataset.reshape"><a class="viewcode-back" href="../../../alien.data.html#alien.data.dataset.Dataset.reshape">[docs]</a>    <span class="k">def</span> <span class="nf">reshape</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">shape</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bdim</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div></div>
+
+
+<div class="viewcode-block" id="TeachableDataset"><a class="viewcode-back" href="../../../alien.data.html#alien.data.dataset.TeachableDataset">[docs]</a><span class="k">class</span> <span class="nc">TeachableDataset</span><span class="p">(</span><span class="n">Dataset</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Abstract interface to a teachable dataset.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="TeachableDataset.append"><a class="viewcode-back" href="../../../alien.data.html#alien.data.dataset.TeachableDataset.append">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Appends a single sample to the end of the dataset.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="TeachableDataset.extend"><a class="viewcode-back" href="../../../alien.data.html#alien.data.dataset.TeachableDataset.extend">[docs]</a>    <span class="k">def</span> <span class="nf">extend</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Appends a batch of samples to the end of the dataset.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># This is the default implementation of extend.</span>
+        <span class="c1"># Subclasses may accomplish this faster</span>
+        <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">X</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TeachableDataset.from_data"><a class="viewcode-back" href="../../../alien.data.html#alien.data.dataset.TeachableDataset.from_data">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">from_data</span><span class="p">(</span>
+        <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">shuffle</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">random_seed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">SeedSequence</span><span class="p">,</span> <span class="n">BitGenerator</span><span class="p">,</span> <span class="n">Generator</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">recursive</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">convert_sequences</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates a TeachableDataset with given data.</span>
+
+<span class="sd">        :param data: the initial data of the dataset</span>
+<span class="sd">            Can be:</span>
+<span class="sd">                * another TeachableDataset</span>
+<span class="sd">                * a Python mutable sequence (eg., a list) or</span>
+<span class="sd">                  anything that implements the interface</span>
+<span class="sd">                * a Numpy array</span>
+<span class="sd">                * a Pytorch tensor</span>
+<span class="sd">                * a dictionary or tuple whose values are one of the above types</span>
+<span class="sd">                * a Pandas DataFrame</span>
+
+<span class="sd">        :param shuffle: if this evaluates to True, data will be wrapped in a shuffle,</span>
+<span class="sd">                exposing the ShuffledDataset interface.</span>
+<span class="sd">                Can be:</span>
+<span class="sd">                * anything evaluating to False</span>
+<span class="sd">                * &#39;identity&#39; (initial shuffle is the identity)</span>
+<span class="sd">                * &#39;random&#39; (initial shuffle is random)</span>
+
+<span class="sd">        :param random_seed: a random seed to pass to Numpy&#39;s shuffle algorithm.</span>
+<span class="sd">                    If None (the default), Numpy gets entropy from the OS.</span>
+
+<span class="sd">        :param recursive: if True, data like MutableSequences or TeachableDatasets that</span>
+<span class="sd">                    already expose the needed interface, will still be wrapped;</span>
+<span class="sd">                    if False, such data will be returned as-is, with no new object</span>
+<span class="sd">                    created.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">shuffle</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">ShuffledDataset</span><span class="p">(</span>
+                <span class="n">TeachableDataset</span><span class="o">.</span><span class="n">from_data</span><span class="p">(</span>
+                    <span class="n">data</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">convert_sequences</span><span class="o">=</span><span class="n">convert_sequences</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+                <span class="p">),</span>
+                <span class="n">shuffle</span><span class="o">=</span><span class="n">shuffle</span><span class="p">,</span>
+                <span class="n">random_seed</span><span class="o">=</span><span class="n">random_seed</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">DictDataset</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">convert_sequences</span><span class="o">=</span><span class="n">convert_sequences</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">convert_sequences</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">MutableSequence</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">NumpyDataset</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">TeachableDataset</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">MutableSequence</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">TeachableWrapperDataset</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="k">if</span> <span class="n">recursive</span> <span class="k">else</span> <span class="n">data</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">NumpyDataset</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">TupleDataset</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">convert_sequences</span><span class="o">=</span><span class="n">convert_sequences</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="s2">&quot;torch&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="n">TorchDataset</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="s2">&quot;DataFrame&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="n">DictDataset</span><span class="p">({</span><span class="n">k</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">})</span>
+        <span class="k">elif</span> <span class="s2">&quot;deepchem&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="n">TeachableDataset</span><span class="o">.</span><span class="n">from_deepchem</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Passing an unknown data format into TeachableDataset.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">TeachableWrapperDataset</span><span class="p">(</span><span class="n">data</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TeachableDataset.from_deepchem"><a class="viewcode-back" href="../../../alien.data.html#alien.data.dataset.TeachableDataset.from_deepchem">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">from_deepchem</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># pylint: disable=import-outside-toplevel</span>
+            <span class="kn">import</span> <span class="nn">deepchem</span>
+
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">deepchem</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span>
+            <span class="kn">from</span> <span class="nn">.deepchem</span> <span class="kn">import</span> <span class="n">DeepChemDataset</span>
+
+            <span class="k">return</span> <span class="n">DeepChemDataset</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                <span class="s2">&quot;We thought this was a DeepChem dataset, but apparently not!&quot;</span>
+            <span class="p">)</span> <span class="kn">from</span> <span class="nn">exc</span></div>
+
+<div class="viewcode-block" id="TeachableDataset.get_shuffle"><a class="viewcode-back" href="../../../alien.data.html#alien.data.dataset.TeachableDataset.get_shuffle">[docs]</a>    <span class="k">def</span> <span class="nf">get_shuffle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="s2">&quot;random&quot;</span><span class="p">,</span> <span class="n">random_seed</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a shuffled version of self</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            shuffle (str, optional): The initial shuffle - `&#39;identity&#39;` or `&#39;random&#39;`. Defaults to `&#39;random`&#39;.</span>
+<span class="sd">            random_seed (int, optional): A random seed for the shuffle. Defaults to None.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ShuffledDataset: A shuffled version of `self`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">ShuffledDataset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="n">shuffle</span><span class="p">,</span> <span class="n">random_seed</span><span class="o">=</span><span class="n">random_seed</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="TeachableWrapperDataset"><a class="viewcode-back" href="../../../alien.data.html#alien.data.dataset.TeachableWrapperDataset">[docs]</a><span class="k">class</span> <span class="nc">TeachableWrapperDataset</span><span class="p">(</span><span class="n">TeachableDataset</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Wraps another dataset-like object.</span>
+<span class="sd">    Functions as an abstract base class for wrapping specific data types.</span>
+<span class="sd">    Also functions concretely as the default wrapper for MutableSequences,</span>
+<span class="sd">    other TeachableDatasets, and anything else which exposes a suitable</span>
+<span class="sd">    interface.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span>
+
+<div class="viewcode-block" id="TeachableWrapperDataset.append"><a class="viewcode-back" href="../../../alien.data.html#alien.data.dataset.TeachableWrapperDataset.append">[docs]</a>    <span class="k">def</span> <span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">val</span></div>
+
+<div class="viewcode-block" id="TeachableWrapperDataset.extend"><a class="viewcode-back" href="../../../alien.data.html#alien.data.dataset.TeachableWrapperDataset.extend">[docs]</a>    <span class="k">def</span> <span class="nf">extend</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">val</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">X</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TeachableWrapperDataset.find"><a class="viewcode-back" href="../../../alien.data.html#alien.data.dataset.TeachableWrapperDataset.find">[docs]</a>    <span class="k">def</span> <span class="nf">find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">first</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+        <span class="c1"># Raising NotImplementedError to avoid missing abstract method.</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+<div class="viewcode-block" id="TeachableWrapperDataset.reshape_features"><a class="viewcode-back" href="../../../alien.data.html#alien.data.dataset.TeachableWrapperDataset.reshape_features">[docs]</a>    <span class="k">def</span> <span class="nf">reshape_features</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">shape</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">*</span><span class="n">shape</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">add_slice</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdim</span><span class="p">),</span> <span class="n">bdim</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bdim</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TeachableWrapperDataset.reshape_batch"><a class="viewcode-back" href="../../../alien.data.html#alien.data.dataset.TeachableWrapperDataset.reshape_batch">[docs]</a>    <span class="k">def</span> <span class="nf">reshape_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">shape</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">index</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdim</span><span class="p">)</span>
+            <span class="n">bdim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="nb">slice</span><span class="p">):</span>
+            <span class="k">assert</span> <span class="n">index</span><span class="o">.</span><span class="n">step</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">index</span><span class="o">.</span><span class="n">step</span> <span class="o">==</span> <span class="mi">1</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">index</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">index</span><span class="o">.</span><span class="n">stop</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdim</span><span class="p">))</span>
+            <span class="n">bdim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdim</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="n">index</span><span class="o">.</span><span class="n">stop</span> <span class="o">-</span> <span class="n">index</span><span class="o">.</span><span class="n">start</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">*</span><span class="n">shape</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">index</span><span class="p">,</span> <span class="n">bdim</span><span class="o">=</span><span class="n">bdim</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="n">i0</span><span class="p">,</span> <span class="o">*</span><span class="n">i</span> <span class="o">=</span> <span class="n">index</span>
+            <span class="k">if</span> <span class="n">i0</span> <span class="o">==</span> <span class="o">...</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="c1"># Assume we can push &#39;...&#39; onto the rows</span>
+                    <span class="k">return</span> <span class="p">[</span><span class="n">row</span><span class="p">[(</span><span class="o">...</span><span class="p">,</span> <span class="o">*</span><span class="n">i</span><span class="p">)]</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">]</span>
+                <span class="k">except</span> <span class="ne">LookupError</span><span class="p">:</span>
+                    <span class="c1"># Apparently not</span>
+                    <span class="k">return</span> <span class="p">[</span><span class="n">row</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">]</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># Assume i0 is an integer, so self[i0] will be</span>
+                <span class="c1"># a single row</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">i0</span><span class="p">)][</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+                <span class="c1"># Apparently not</span>
+                <span class="k">return</span> <span class="p">[</span><span class="n">row</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">[</span><span class="n">i0</span><span class="p">]]</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">LookupError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">index</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">_ignore__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__iter__</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span></div>
+
+
+<div class="viewcode-block" id="ShuffledDataset"><a class="viewcode-back" href="../../../alien.data.html#alien.data.dataset.ShuffledDataset">[docs]</a><span class="k">class</span> <span class="nc">ShuffledDataset</span><span class="p">(</span><span class="n">TeachableWrapperDataset</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Presents a shuffle of an existing dataset (or MutableSequence)</span>
+
+<span class="sd">    Added data goes at the end and isn&#39;t shuffled (until reshuffle() is called).</span>
+
+<span class="sd">    :param data: the existing dataset to wrap</span>
+<span class="sd">    :param shuffle: determines the initial shuffle state: &#39;random&#39; or &#39;identity&#39;</span>
+<span class="sd">    :param random_seed: random seed to pass to the numpy shuffle algorithm.</span>
+<span class="sd">                  If None, get a source of randomness from the OS.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">,</span>
+        <span class="n">shuffle</span><span class="o">=</span><span class="s2">&quot;random&quot;</span><span class="p">,</span>
+        <span class="n">random_seed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">SeedSequence</span><span class="p">,</span> <span class="n">BitGenerator</span><span class="p">,</span> <span class="n">Generator</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">recursive</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">bdim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="k">assert</span> <span class="n">bdim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;ShuffledDataset is only possible with one batch dimension.&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">random_seed</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">recursive</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">ShuffledDataset</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">shuffle</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">shuffle</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">shuffle</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">),</span> <span class="s2">&quot;Supplied shuffle must be same length as data!&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shuffle</span> <span class="o">=</span> <span class="n">shuffle</span>
+        <span class="k">elif</span> <span class="n">shuffle</span> <span class="o">==</span> <span class="s2">&quot;identity&quot;</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">shuffle</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shuffle</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># shuffle == &#39;random&#39; OR any True-valued</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shuffle</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reshuffle</span><span class="p">()</span>
+
+<div class="viewcode-block" id="ShuffledDataset.reshuffle"><a class="viewcode-back" href="../../../alien.data.html#alien.data.dataset.ShuffledDataset.reshuffle">[docs]</a>    <span class="k">def</span> <span class="nf">reshuffle</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="c1"># random_seed: Optional[</span>
+        <span class="c1">#     Union[int, ArrayLike, SeedSequence, BitGenerator, Generator]</span>
+        <span class="c1"># ] = None,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reshuffles self with self.rng.&quot;&quot;&quot;</span>
+        <span class="c1"># TODO: random_seed is not used here. Should remove or refactor to use it</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shuffle</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ShuffledDataset.extend_shuffle"><a class="viewcode-back" href="../../../alien.data.html#alien.data.dataset.ShuffledDataset.extend_shuffle">[docs]</a>    <span class="k">def</span> <span class="nf">extend_shuffle</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Extend self.shuffle with [len(self.shuffle), ..., len(self.data)].&quot;&quot;&quot;</span>
+        <span class="n">len_shuffle</span><span class="p">,</span> <span class="n">len_data</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shuffle</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">len_shuffle</span> <span class="o">&lt;</span> <span class="n">len_data</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shuffle</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shuffle</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">len_shuffle</span><span class="p">,</span> <span class="n">len_data</span><span class="p">))</span></div>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">extend_shuffle</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="n">i0</span><span class="p">,</span> <span class="o">*</span><span class="n">i</span> <span class="o">=</span> <span class="n">index</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[(</span><span class="bp">self</span><span class="o">.</span><span class="n">shuffle</span><span class="p">[</span><span class="n">i0</span><span class="p">],</span> <span class="o">*</span><span class="n">i</span><span class="p">)]</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">shuffle</span><span class="p">[</span><span class="n">index</span><span class="p">]]</span>
+
+<div class="viewcode-block" id="ShuffledDataset.find"><a class="viewcode-back" href="../../../alien.data.html#alien.data.dataset.ShuffledDataset.find">[docs]</a>    <span class="k">def</span> <span class="nf">find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">first</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return index(es) of value in self.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            value (Any): value to look for</span>
+<span class="sd">            first (bool, optional): whether to return first instance of value or all of them. Defaults to True.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            _type_: _description_</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">first</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">first</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">i</span> <span class="k">if</span> <span class="n">i</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">shuffle</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">i</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">shuffle</span><span class="p">[</span><span class="n">i</span><span class="p">]</span></div>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">extend_shuffle</span><span class="p">()</span>
+        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="n">TeachableDataset</span><span class="o">.</span><span class="n">from_data</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">shuffle</span><span class="p">]))</span>
+
+    <span class="k">def</span> <span class="nf">__array__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="s2">&quot;Converts to a Numpy array&quot;</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)[</span><span class="bp">self</span><span class="o">.</span><span class="n">shuffle</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">X</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="n">ShuffledDataset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">shuffle</span><span class="p">)</span>
+        <span class="n">X</span><span class="o">.</span><span class="n">rng</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">X</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">y</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">ShuffledDataset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">shuffle</span><span class="p">)</span>
+        <span class="n">y</span><span class="o">.</span><span class="n">rng</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">y</span></div>
+
+
+<div class="viewcode-block" id="compute_bdim"><a class="viewcode-back" href="../../../alien.data.html#alien.data.dataset.compute_bdim">[docs]</a><span class="k">def</span> <span class="nf">compute_bdim</span><span class="p">(</span><span class="n">old_shape</span><span class="p">,</span> <span class="n">old_bdim</span><span class="p">,</span> <span class="n">new_shape</span><span class="p">):</span>
+    <span class="n">b_size</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">old_shape</span><span class="p">[:</span><span class="n">old_bdim</span><span class="p">])</span>
+    <span class="n">size</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">for</span> <span class="n">bdim</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">new_shape</span><span class="p">):</span>
+        <span class="n">size</span> <span class="o">*=</span> <span class="n">d</span>
+        <span class="k">if</span> <span class="n">size</span> <span class="o">==</span> <span class="n">b_size</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">bdim</span> <span class="o">+</span> <span class="p">(</span><span class="n">size</span> <span class="o">==</span> <span class="n">b_size</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">size</span> <span class="o">&gt;</span> <span class="n">b_size</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;New shape must have initial axes with total size equal to the original batch size.&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ArrayDataset"><a class="viewcode-back" href="../../../alien.data.html#alien.data.dataset.ArrayDataset">[docs]</a><span class="k">class</span> <span class="nc">ArrayDataset</span><span class="p">(</span><span class="n">TeachableWrapperDataset</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Abstract base class for datasets based on numpy, pytorch,</span>
+<span class="sd">    or other similarly-interfaced arrays.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+        <span class="n">bdim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdim</span>
+        <span class="k">if</span> <span class="n">isint</span><span class="p">(</span><span class="n">index</span><span class="p">):</span>
+            <span class="n">bdim</span> <span class="o">-=</span> <span class="mi">1</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">index</span><span class="p">[:</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdim</span><span class="p">]:</span>
+                <span class="n">bdim</span> <span class="o">-=</span> <span class="n">isint</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">bdim</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">index</span><span class="p">],</span> <span class="n">bdim</span><span class="o">=</span><span class="n">bdim</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+<div class="viewcode-block" id="ArrayDataset.append"><a class="viewcode-back" href="../../../alien.data.html#alien.data.dataset.ArrayDataset.append">[docs]</a>    <span class="k">def</span> <span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">x</span><span class="p">)[</span><span class="kc">None</span><span class="p">,</span> <span class="o">...</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="ArrayDataset.find"><a class="viewcode-back" href="../../../alien.data.html#alien.data.dataset.ArrayDataset.find">[docs]</a>    <span class="k">def</span> <span class="nf">find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">first</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="n">matches</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">==</span> <span class="n">value</span>
+
+        <span class="c1"># remove extra dimensions</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">matches</span><span class="o">.</span><span class="n">ndim</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdim</span><span class="p">):</span>
+            <span class="n">matches</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">matches</span><span class="p">),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argwhere</span><span class="p">(</span><span class="n">matches</span><span class="p">)[:,</span> <span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">first</span><span class="p">:</span>
+            <span class="c1"># take only the first match:</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">index</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">index</span></div>
+
+    <span class="k">def</span> <span class="nf">__array__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ArrayDataset.reshape"><a class="viewcode-back" href="../../../alien.data.html#alien.data.dataset.ArrayDataset.reshape">[docs]</a>    <span class="k">def</span> <span class="nf">reshape</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">shape</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bdim</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">index</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">index</span><span class="o">.</span><span class="n">step</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">index</span><span class="o">.</span><span class="n">step</span> <span class="o">==</span> <span class="mi">1</span>
+            <span class="n">shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span> <span class="n">index</span><span class="o">.</span><span class="n">start</span><span class="p">]</span> <span class="o">+</span> <span class="n">shape</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">index</span><span class="o">.</span><span class="n">stop</span> <span class="p">:]</span>
+
+        <span class="k">if</span> <span class="n">bdim</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">bdim</span> <span class="o">=</span> <span class="n">compute_bdim</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdim</span><span class="p">,</span> <span class="n">shape</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">shape</span><span class="p">),</span> <span class="n">bdim</span><span class="o">=</span><span class="n">bdim</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="NumpyDataset"><a class="viewcode-back" href="../../../alien.data.html#alien.data.dataset.NumpyDataset">[docs]</a><span class="k">class</span> <span class="nc">NumpyDataset</span><span class="p">(</span><span class="n">ArrayDataset</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dataset with Numpy array as data.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="NumpyDataset.extend"><a class="viewcode-back" href="../../../alien.data.html#alien.data.dataset.NumpyDataset.extend">[docs]</a>    <span class="k">def</span> <span class="nf">extend</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">X</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">__array__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="k">if</span> <span class="n">dtype</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="TorchDataset"><a class="viewcode-back" href="../../../alien.data.html#alien.data.dataset.TorchDataset">[docs]</a><span class="k">class</span> <span class="nc">TorchDataset</span><span class="p">(</span><span class="n">ArrayDataset</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dataset with torch.tensor as data.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="TorchDataset.extend"><a class="viewcode-back" href="../../../alien.data.html#alien.data.dataset.TorchDataset.extend">[docs]</a>    <span class="k">def</span> <span class="nf">extend</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+        <span class="kn">import</span> <span class="nn">torch</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Dataset</span><span class="p">):</span>
+            <span class="n">X</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">X</span><span class="p">)),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">__array__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">numpy</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">data</span> <span class="k">if</span> <span class="n">dtype</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">data</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DictDataset"><a class="viewcode-back" href="../../../alien.data.html#alien.data.dataset.DictDataset">[docs]</a><span class="k">class</span> <span class="nc">DictDataset</span><span class="p">(</span><span class="n">TeachableWrapperDataset</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Contains a dictionary whose values are datasets.</span>
+
+<span class="sd">    For indexing purposes, the first `self.bdim` axes (i.e., the</span>
+<span class="sd">    batch dimensions) index into the first axes of the constituent</span>
+<span class="sd">    datasets, whereas the dictionary key &quot;dimension&quot; occurs right after</span>
+<span class="sd">    the batch dimensions. Since there is usually exactly one batch</span>
+<span class="sd">    dimension, this means you can index like</span>
+
+<span class="sd">    &gt;&gt;&gt; dataset[:20, &#39;X&#39;]</span>
+
+<span class="sd">    which will return the first 20 rows of the `&#39;X&#39;` constituent dataset,</span>
+<span class="sd">    whereas</span>
+
+<span class="sd">    &gt;&gt;&gt; dataset[:20]</span>
+
+<span class="sd">    will take the first 20 rows of each constituent dataset, and package</span>
+<span class="sd">    them into a new `DictDataset` with the same keys.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+        <span class="n">data</span><span class="o">=</span><span class="p">{},</span> <span class="c1"># NOSONAR</span>
+        <span class="n">convert_sequences</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">bdim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">has_Xy</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kw_data</span>
+    <span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">update_copy</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">kw_data</span><span class="p">)</span> <span class="c1"># NOSONAR</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">bdim</span><span class="o">=</span><span class="n">bdim</span><span class="p">,</span>
+            <span class="n">has_Xy</span><span class="o">=</span><span class="nb">bool</span><span class="p">({</span><span class="s1">&#39;X&#39;</span><span class="p">,</span><span class="s1">&#39;x&#39;</span><span class="p">,</span><span class="s1">&#39;y&#39;</span><span class="p">}</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">data</span><span class="p">))</span> <span class="k">if</span> <span class="n">has_Xy</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">has_Xy</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">k</span><span class="p">:</span> <span class="n">TeachableDataset</span><span class="o">.</span><span class="n">from_data</span><span class="p">(</span>
+                <span class="n">d</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">convert_sequences</span><span class="o">=</span><span class="n">convert_sequences</span><span class="p">,</span> <span class="n">bdim</span><span class="o">=</span><span class="n">bdim</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">}</span>
+
+<div class="viewcode-block" id="DictDataset.append"><a class="viewcode-back" href="../../../alien.data.html#alien.data.dataset.DictDataset.append">[docs]</a>    <span class="k">def</span> <span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">key</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="DictDataset.extend"><a class="viewcode-back" href="../../../alien.data.html#alien.data.dataset.DictDataset.extend">[docs]</a>    <span class="k">def</span> <span class="nf">extend</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">DictDataset</span><span class="p">):</span>
+            <span class="n">X</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">data</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="n">key</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="DictDataset.reshape"><a class="viewcode-back" href="../../../alien.data.html#alien.data.dataset.DictDataset.reshape">[docs]</a>    <span class="k">def</span> <span class="nf">reshape</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">shape</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bdim</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">bdim</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">index</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="nb">slice</span><span class="p">)</span>
+                <span class="n">new_shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span> <span class="n">index</span><span class="o">.</span><span class="n">start</span><span class="p">]</span> <span class="o">+</span> <span class="n">shape</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">index</span><span class="o">.</span><span class="n">stop</span> <span class="p">:]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">new_shape</span> <span class="o">=</span> <span class="n">shape</span>
+            <span class="n">bdim</span> <span class="o">=</span> <span class="n">compute_bdim</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdim</span><span class="p">,</span> <span class="n">new_shape</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">shape</span><span class="p">[</span><span class="n">bdim</span><span class="p">]</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;When reshaping a DictDataset, the first non-batch dimension must equal the number of keys.&quot;</span><span class="p">)</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="n">shape</span><span class="p">[:</span><span class="n">bdim</span><span class="p">]</span> <span class="o">+</span> <span class="n">shape</span><span class="p">[</span><span class="n">bdim</span><span class="o">+</span><span class="mi">1</span><span class="p">:]</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span>
+            <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">reshape</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">index</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">()},</span> <span class="n">bdim</span><span class="o">=</span><span class="n">bdim</span>
+        <span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">index</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdim</span><span class="p">:</span>
+            <span class="c1"># i is the indices into each dataset in the dictionary</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="n">index</span><span class="p">[:</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdim</span><span class="p">]</span> <span class="o">+</span> <span class="n">index</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">bdim</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:]</span>
+
+            <span class="c1"># k is the dict key(s)</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="n">index</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">bdim</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+                <span class="n">k</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">MutableSequence</span><span class="p">):</span>
+                <span class="c1"># single dict key, so return its value</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="n">index</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+
+        <span class="n">sub_data</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">k</span><span class="p">}</span>
+
+        <span class="n">bdim</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">sub_data</span><span class="o">.</span><span class="n">values</span><span class="p">())),</span> <span class="s2">&quot;bdim&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">bdim</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># batch is fully-indexed, so we return a dict</span>
+            <span class="k">return</span> <span class="n">sub_data</span>
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># some batch indices remain, so return a DictDataset</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">sub_data</span><span class="p">,</span> <span class="n">bdim</span><span class="o">=</span><span class="n">bdim</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">ndindex</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">bdim</span><span class="p">]):</span>
+            <span class="k">yield</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">())))</span>
+
+    <span class="k">def</span> <span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="s2">&quot;bdim&quot;</span><span class="p">,</span> <span class="s2">&quot;has_Xy&quot;</span><span class="p">}</span> <span class="ow">or</span> <span class="n">name</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;__&quot;</span><span class="p">:</span>
+            <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="k">def</span> <span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">IndexError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span>
+
+<div class="viewcode-block" id="DictDataset.find"><a class="viewcode-back" href="../../../alien.data.html#alien.data.dataset.DictDataset.find">[docs]</a>    <span class="k">def</span> <span class="nf">find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">first</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">value</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">first</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">value</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">indices</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">intersect1d</span><span class="p">(</span><span class="n">indices</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">indices</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">assume_unique</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+                <span class="o">*</span><span class="p">(</span><span class="n">indices</span><span class="p">[</span><span class="mi">2</span><span class="p">:]),</span>
+            <span class="p">)</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="n">indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">first</span><span class="p">:</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">index</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">index</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">X</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_Xy</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;X&quot;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">y</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_Xy</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">inner_shape</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span><span class="o">.</span><span class="n">shape</span>
+        <span class="k">return</span> <span class="n">inner_shape</span><span class="p">[:</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdim</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">),)</span> <span class="o">+</span> <span class="n">inner_shape</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">bdim</span> <span class="p">:]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">ndim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span><span class="o">.</span><span class="n">ndim</span> <span class="o">+</span> <span class="mi">1</span></div>
+
+
+<div class="viewcode-block" id="TupleDataset"><a class="viewcode-back" href="../../../alien.data.html#alien.data.dataset.TupleDataset">[docs]</a><span class="k">class</span> <span class="nc">TupleDataset</span><span class="p">(</span><span class="n">TeachableWrapperDataset</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dataset with Tuple as self.data.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">convert_sequences</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">bdim</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">bdim</span><span class="o">=</span><span class="n">bdim</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+            <span class="n">TeachableDataset</span><span class="o">.</span><span class="n">from_data</span><span class="p">(</span>
+                <span class="n">d</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">convert_sequences</span><span class="o">=</span><span class="n">convert_sequences</span><span class="p">,</span> <span class="n">bdim</span><span class="o">=</span><span class="n">bdim</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">data</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="TupleDataset.append"><a class="viewcode-back" href="../../../alien.data.html#alien.data.dataset.TupleDataset.append">[docs]</a>    <span class="k">def</span> <span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">data_n</span><span class="p">,</span> <span class="n">x_n</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+            <span class="n">data_n</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x_n</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TupleDataset.extend"><a class="viewcode-back" href="../../../alien.data.html#alien.data.dataset.TupleDataset.extend">[docs]</a>    <span class="k">def</span> <span class="nf">extend</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">data_n</span><span class="p">,</span> <span class="n">x_n</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+            <span class="n">data_n</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">x_n</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TupleDataset.reshape"><a class="viewcode-back" href="../../../alien.data.html#alien.data.dataset.TupleDataset.reshape">[docs]</a>    <span class="k">def</span> <span class="nf">reshape</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">shape</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bdim</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">bdim</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">self_shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
+            <span class="k">if</span> <span class="n">index</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="nb">slice</span><span class="p">)</span>
+                <span class="n">new_shape</span> <span class="o">=</span> <span class="n">self_shape</span><span class="p">[:</span> <span class="n">index</span><span class="o">.</span><span class="n">start</span><span class="p">]</span> <span class="o">+</span> <span class="n">shape</span> <span class="o">+</span> <span class="n">self_shape</span><span class="p">[</span><span class="n">index</span><span class="o">.</span><span class="n">stop</span> <span class="p">:]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">new_shape</span> <span class="o">=</span> <span class="n">shape</span>
+            <span class="n">bdim</span> <span class="o">=</span> <span class="n">compute_bdim</span><span class="p">(</span><span class="n">self_shape</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdim</span><span class="p">,</span> <span class="n">new_shape</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">shape</span><span class="p">[</span><span class="n">bdim</span><span class="p">]</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;When reshaping a TupleDataset, the first non-batch dimension must equal the number of keys.&quot;</span><span class="p">)</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="n">shape</span><span class="p">[:</span><span class="n">bdim</span><span class="p">]</span> <span class="o">+</span> <span class="n">shape</span><span class="p">[</span><span class="n">bdim</span><span class="o">+</span><span class="mi">1</span><span class="p">:]</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">reshape</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">index</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">),</span> <span class="n">bdim</span><span class="o">=</span><span class="n">bdim</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+        <span class="c1"># Case 1: indexing multiple axes</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">index</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdim</span><span class="p">:</span>
+            <span class="c1"># i is the indices into each dataset in the tuple</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="n">index</span><span class="p">[:</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdim</span><span class="p">]</span> <span class="o">+</span> <span class="n">index</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">bdim</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:]</span>
+
+            <span class="c1"># k is the tuple key(s)</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="n">index</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">bdim</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">isint</span><span class="p">(</span><span class="n">k</span><span class="p">):</span>
+                <span class="c1"># returning a single dataset in the tuple</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="nb">slice</span><span class="p">):</span>
+                <span class="c1"># select a slice of the tuple</span>
+                <span class="n">sub_data</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># selecting multiple elements of the tuple</span>
+                <span class="c1"># TODO: d is undefined here</span>
+                <span class="n">sub_data</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">k</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sub_data</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+        <span class="n">bdim</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">sub_data</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;bdim&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">bdim</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># batch is fully-indexed, so we return a tuple</span>
+            <span class="k">return</span> <span class="n">sub_data</span>
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># some batch indices remain, so return a TupleDataset</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">sub_data</span><span class="p">,</span> <span class="n">bdim</span><span class="o">=</span><span class="n">bdim</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">__array__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">arrays</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">X_n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span> <span class="k">for</span> <span class="n">X_n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+        <span class="n">max_dim</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">ndim</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">arrays</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">arr</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">arrays</span><span class="p">):</span>
+            <span class="k">while</span> <span class="n">arr</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&lt;</span> <span class="n">max_dim</span><span class="p">:</span>
+                <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">arrays</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">arr</span>
+
+        <span class="k">if</span> <span class="n">concatenate</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">arrays</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">arrays</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<div class="viewcode-block" id="TupleDataset.find"><a class="viewcode-back" href="../../../alien.data.html#alien.data.dataset.TupleDataset.find">[docs]</a>    <span class="k">def</span> <span class="nf">find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">first</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">d_n</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">v_n</span><span class="p">,</span> <span class="n">first</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">for</span> <span class="n">d_n</span><span class="p">,</span> <span class="n">v_n</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">value</span><span class="p">))</span>
+        <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">indices</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">intersect1d</span><span class="p">(</span><span class="n">indices</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">indices</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">assume_unique</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+                <span class="o">*</span><span class="p">(</span><span class="n">indices</span><span class="p">[</span><span class="mi">2</span><span class="p">:]),</span>
+            <span class="p">)</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="n">indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">first</span><span class="p">:</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">index</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">index</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">tuple</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Getter for self.data.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">inner_shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
+        <span class="k">return</span> <span class="n">inner_shape</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">bdim</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">),)</span> <span class="o">+</span> <span class="p">(</span><span class="n">inner_shape</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">bdim</span><span class="p">:])</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">X</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_Xy</span><span class="p">()</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">TupleDataset</span><span class="p">(</span><span class="n">X</span><span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">X</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">y</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_Xy</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

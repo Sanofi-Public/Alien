@@ -1,11 +1,6 @@
 alien.selection
 ===============
 
-.. image :: /../media/curio_dab.png
-   :alt: Curio the alien dabbing on a rainbow
-   :width: 35%
-   :align: right
-
 .. automodule:: alien.selection
 
 SampleSelector

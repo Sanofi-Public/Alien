@@ -17,14 +17,8 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     "sphinxcontrib.confluencebuilder",
+    "sphinx.ext.githubpages"
 ]
-
-confluence_publish = True
-confluence_server_url = os.environ.get("CONFLUENCE_SERVER")
-confluence_space_key = os.environ.get("CONFLUENCE_SPACE_KEY")
-confluence_server_user = os.environ.get("CONFLUENCE_USER")
-confluence_server_pass = os.environ.get("CONFLUENCE_USER_KEY")
-confluence_parent_page = "Unstructured data search"
 
 
 def _get_project_meta():

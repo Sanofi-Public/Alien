@@ -16,7 +16,6 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
-    "sphinxcontrib.confluencebuilder",
     "sphinx.ext.githubpages"
 ]
 
@@ -54,6 +53,5 @@ default_role = "obj"
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = "sphinx_rtd_theme"
-# html_logo = "../media/curio_small.png"
 
 # html_static_path = ['_static']

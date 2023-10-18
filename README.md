@@ -12,8 +12,8 @@ such as finding the (epistemic) uncertainty of a prediction, or selecting
 batches of new points to be labelled next (eg., by measuring them in a lab).
 
 ALiEN is in Beta testing and is not a finished product!
-**TODO: Change documentation link**
-[DOCUMENTATION HERE](google.com)
+
+[Documentation](https://sanofi-public.github.io/Alien/).
 
 Installation
 ============
@@ -42,7 +42,7 @@ In the following example, we take certain objects as given:
 Then the following code will wrap the model in ALIEN's `MCDropoutRegressor` class, fit the model to `X` and `y`, and then select a batch of 10 samples from `unlabeled_pool` for labelling using the *COVDROP* selection strategy (which is what we call the combination of
 MC dropout with `CovarianceSelector`):
 
-```
+```python
 from alien.models import MCDropoutRegressor
 from alien.selecion import CovarianceSelector
 

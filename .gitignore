@@ -170,7 +170,6 @@ cython_debug/
 .vscode/
 
 # Local data
-/data
 notebooks/deepchem_models/
 notebooks/data/
 
@@ -180,4 +179,5 @@ lightning_logs/
 # CatBoost
 catboost_info/
 
-#
+# DS Store
+.DS_Store

@@ -1,0 +1,3 @@
+The data in this repository is provided solely for the purpose of validating the methods, and reproducing the results, described in the publication ["Deep Batch Active Learning for Drug Discovery"](https://elifesciences.org/reviewed-preprints/89679) by Bailey et al. All other rights are reserved.
+
+We are not providing support relating to this data, but simply releasing it AS IS, without warranty of any kind, express or implied (including any warranty of noninfringement), and are not providing any guarantees of support relating to its use.

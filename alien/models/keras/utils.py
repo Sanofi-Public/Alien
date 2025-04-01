@@ -1,8 +1,11 @@
 """Helper functions for """
-from collections.abc import MutableSequence, Hashable
+
+from collections.abc import MutableSequence
+
 from ...utils import is_one
 
 # pylint: disable=import-outside-toplevel,protected-access
+
 
 def dropout_call(self, inputs, training=None):
     """
@@ -21,18 +24,14 @@ def dropout_call(self, inputs, training=None):
         training = learning_phase()
 
     noise_shape = self.noise_shape
-    if noise_shape is None and training and type(training) == int:
-        noise_shape = list(inputs.shape)
-    if noise_shape is not None:
-        noise_shape = [N if N else I for N, I in zip(noise_shape, inputs.shape)]
+    input_shape = tf.shape(inputs)#.numpy().tolist()
+    if noise_shape is None and training and isinstance(training, int):
+        noise_shape = input_shape
+    elif noise_shape is not None:
+        noise_shape = [N or I for N, I in zip(noise_shape, input_shape)]
 
-        if is_one(training):
-            noise_shape[0] = 1
-            # print(f"Doing MC dropout with noise shape {noise_shape}")
-
-        noise_shape = tf.convert_to_tensor(noise_shape)
-
-    # print(f"{noise_shape = }")
+    if is_one(training):
+        noise_shape = (1, *noise_shape[1:])
 
     def dropped_inputs():
         return self._random_generator.dropout(inputs, self.rate, noise_shape=noise_shape)
@@ -46,15 +45,21 @@ def humble_batchnorm_call(self, inputs, training=None):
     return self._hidden_call(inputs, training)
 
 
+def dropout__getstate__(self):
+    state = self.__dict__.copy()
+    state.pop("call", None)
+    state.pop("__getstate__", None)
+    return state
+
+
 def get_mod_layers(mod):
     if isinstance(mod, MutableSequence):
         return mod
-    elif hasattr(mod, "layers"):
+    if hasattr(mod, "layers"):
         return mod.layers
-    elif hasattr(mod, "__dict__"):
+    if hasattr(mod, "__dict__"):
         return mod.__dict__.values()
-    else:
-        return []
+    return []
 
 
 def subobjects(module, skip=frozenset(), only_layers=True):
@@ -69,15 +74,16 @@ def subobjects(module, skip=frozenset(), only_layers=True):
             Keras layers.
 
     Returns:
-        (bool) Whether or not it encountered any of the modules in
-            `skip`
+        an iterator over the subobjects of `module`
     """
     if only_layers:
         import tensorflow as tf
 
     to_read = [module]
-    skip = {id(x) for x in skip}
-    seen = set()
+    seen = {id(x) for x in skip}
+    if id(module) in seen:
+        return []
+    seen.add(id(module))
 
     while to_read:
         mod = to_read.pop(0)
@@ -98,27 +104,33 @@ def modify_dropout(obj):
     Returns:
         bool: whether `obj` is a Dropout
     """
+    # pylint: disable=no-value-for-parameter
     import tensorflow as tf
+
+    obj.__getstate__ = dropout__getstate__.__get__(obj)
+
+    obj.__getstate__ = dropout__getstate__.__get__(obj)
 
     if isinstance(obj, tf.keras.layers.Dropout):
         if obj.__class__ == tf.keras.layers.SpatialDropout1D:
-            obj.noise_shape = (None, 1, None)
+            obj.noise_shape = tf.TensorShape([None, 1, None])
         elif obj.__class__ == tf.keras.layers.SpatialDropout2D:
             obj.noise_shape = (
-                (None, None, 1, 1) if obj.data_format == "channels_first" else (None, 1, 1, None)
+                tf.TensorShape([None, None, 1, 1])
+                if obj.data_format == "channels_first"
+                else tf.TensorShape([None, 1, 1, None])
             )
         elif obj.__class__ == tf.keras.layers.SpatialDropout3D:
             obj.noise_shape = (
-                (None, None, 1, 1, 1)
+                tf.TensorShape([None, None, 1, 1, 1])
                 if obj.data_format == "channels_first"
-                else (None, 1, 1, 1, None)
+                else tf.TensorShape([None, 1, 1, 1, None])
             )
         obj.call = dropout_call.__get__(obj)
         return True
 
-    elif isinstance(obj, tf.keras.layers.BatchNormalization):
+    if isinstance(obj, tf.keras.layers.BatchNormalization) and not hasattr(obj, "_hidden_call"):
         obj._hidden_call = obj.call
         obj.call = humble_batchnorm_call.__get__(obj)
 
     return False
-

@@ -7,7 +7,7 @@ class SampleGenerator(metaclass=ABCMeta):
     @abstractmethod
     def generate_samples(self, N):
         """
-        Generates and returns N samples. 
+        Generates and returns N samples.
 
         :param N: usually an integer. Different generators
             will interpret N == inf in different ways. It

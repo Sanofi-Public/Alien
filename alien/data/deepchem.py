@@ -9,11 +9,22 @@ from .dataset import Dataset, DictDataset, TeachableWrapperDataset
 
 # pylint: disable=import-outside-toplevel
 
+def is_good_feature(x):
+    #breakpoint()
+    if x is None:
+        return False
+    try:
+        if len(x) == 0 and isinstance(x, np.ndarray):
+            return False
+        return True
+    except TypeError:
+        return True
+
 
 class DeepChemDataset(DictDataset):
     """
     DeepChem dataset
-    
+
     Some common featurizers:
 
         Keras `GraphConvModel`s use the `ConvMolFeaturizer`, which may be
@@ -23,10 +34,13 @@ class DeepChemDataset(DictDataset):
             abbreviated to `'molgraph'` here.
     """
 
-    def __init__(self, data={}, *args, featurizer='dummy', bdim=1, **kwargs):  # NOSONAR
+    def __init__(self, data=None, *args, featurizer='dummy', bdim=1, remove_feat_errors=True, **kwargs):  # NOSONAR
         import deepchem as dc
+        #breakpoint()
 
-        if isinstance(data, dc.data.Dataset):
+        if data is None:
+            data = {}
+        elif isinstance(data, dc.data.Dataset):
             dataset = data
             data = {
                 "X": dataset.X,
@@ -39,20 +53,29 @@ class DeepChemDataset(DictDataset):
                 pass
         data = update_copy(data, kwargs)  # NOSONAR
 
-        if "ids" not in data:
-            data["ids"] = Dataset(np.arange(len(data['X'])))
-        if "y" in data and "w" not in data:
-            data["w"] = Dataset(np.ones(len(data['X']), dtype=np.float32))
-
         if featurizer is not None:
-            data["X"] = Dataset(self.get_featurizer(featurizer).featurize(data["X"]))
+            data["X"] = self.get_featurizer(featurizer).featurize(data["X"])
+
+        if remove_feat_errors:
+            i = np.fromiter((i for i, x in enumerate(data["X"]) if is_good_feature(x)), dtype=int)
+            #breakpoint()
+            data = {k: v[i] for k, v in data.items()}
+
+        if "ids" not in data:
+            data["ids"] = Dataset.from_data(np.arange(len(data["X"])))
+        if "y" in data and "w" not in data:
+            data["w"] = Dataset.from_data(np.ones(len(data["X"]), dtype=np.float32))
+
+        for k, v in data.items():
+            if not isinstance(v, Dataset):
+                data[k] = Dataset(v)
 
         super().__init__(data, *args, bdim=bdim, has_Xy=True)
 
     @staticmethod
     def get_featurizer(f, **kwargs):
         import deepchem as dc
-        
+
         if f is None:
             return dc.feat.DummyFeaturizer()
 
@@ -73,9 +96,9 @@ class DeepChemDataset(DictDataset):
         Args:
             X, y (str): Column names for the X and y data
 
-            featurizer: Specifies the DeepChem featurizer to use, if any. 
+            featurizer: Specifies the DeepChem featurizer to use, if any.
                 `featurizer` may be a DeepChem featurizer class, or a featurizer
-                instance, *or* a string contained in the classname of a 
+                instance, *or* a string contained in the classname of a
                 featurizer. (Eg., `'convmol'` matches the DeepChem `ConvMolFeaturizer`.)
 
             **kwargs: These are passed to the featurizer constructor.
@@ -89,7 +112,7 @@ class DeepChemDataset(DictDataset):
 
         loader = dc.data.CSVLoader(
             y, 
-            feature_field=X, 
+            feature_field=X,
             featurizer=DeepChemDataset.get_featurizer(featurizer), 
             **kwargs
         )
@@ -116,9 +139,9 @@ class DeepChemDataset(DictDataset):
             named 'ids', and if none is found, uses the dataframe index.
         :param weights: The name of the weights column. If none is given,
             uses 1.0 for all weights.
-        :param featurizer: Specifies the DeepChem featurizer to use, if any. 
+        :param featurizer: Specifies the DeepChem featurizer to use, if any.
             `featurizer` may be a DeepChem featurizer class, or a featurizer
-            instance, *or* a string contained in the classname of a 
+            instance, *or* a string contained in the classname of a
             featurizer. (Eg., `'convmol'` matches the DeepChem `ConvMolFeaturizer`.)
         :param **kwargs: Any additional keyword args will become columns in
             the dataset; for example, keyword arg `t='timestamp'`, creates

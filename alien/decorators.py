@@ -4,45 +4,43 @@ from typing import List, Optional, Union
 
 import numpy as np
 
-from .sample_generation.generator import SampleGenerator
-from .utils import flatten, reshape, isint
-from .classes import abstract_group
+from .utils import flatten, isint, reshape
 
 
 def default_decorator(dec):
     """
     Enhances a parametrized decorator by giving it the following
     functionality:
-
+    
     If the decorator is applied directly to a function, without any
     parameters specified, then it decorates the function in the usual
     way, with default values for the parameters.
-
+    
     If the decorator is passed parameters, then it returns a new
     decorator (with the given parameter values), able to accept a
     function to decorate.
+    
+    In other words, if we have::
+    
+        @default_decorator
+        decorator(fn, a=1, b=2, ...):
+            ...
 
-    In other words, if we have
+    then::    
 
-    @default_decorator
-    decorator(fn, a=1, b=2, ...):
-        ...
+        @decorator
+        def fn(...):
+            ...
+    
+    gives the usual behaviour for a decorator, but::
 
-    then
+        @decorator(3, b=4)
+        def fn(...):
+            ...
+    
+    gives us the function::
 
-    @decorator
-    def fn(...):
-        ...
-
-    gives the usual behaviour for a decorator, but
-
-    @decorator(3, b=4)
-    def fn(...):
-        ...
-
-    gives us the function
-
-    decorator(fn, a=3, b=4)
+        decorator(fn, a=3, b=4)
     """
     argnames = list(signature(dec).parameters)
 
@@ -57,12 +55,17 @@ def default_decorator(dec):
 
 
 @default_decorator
-def flatten_batch(fn, bdim=0, to_flatten=1, is_method=None, keep_self_dim=True, degree=1):
+def flatten_batch(fn, bdim=0, to_flatten=1, is_method=None, keep_self_dim=True, degree=1):  # NOSONAR
     """
     Decorator which 'flattens' batch dimensions, and
     restores their shape upon return. Used as a convenience
     by functions which need (or want) to assume there is exactly
     one batch dimension.
+
+    Note: If the first flattenable input has a `bdim` attribute, this
+    decorator simply flattens those dimensions, plus or minus `bdim`,
+    ignoring all of the other complicated calculations detailed below.
+    This should produce relatively consistent behaviour.
 
     :param bdim: number of batch dimensions to flatten.
         If negative, keeps that many final dimensions
@@ -116,14 +119,14 @@ def flatten_batch(fn, bdim=0, to_flatten=1, is_method=None, keep_self_dim=True, 
 
         b_dim = args.pop("bdim", bdim)  # If the end-user passes a bdim value, use that instead
 
-        if not hasattr(args[a0], "ndim"):
+        if b := getattr(args[a0], "bdim", None) is not None:
+            b_dim += b
+        elif not hasattr(args[a0], "shape"):
             b_dim = 1
         elif is_method and keep_self_dim:
             self = bound_args.args[0]
             b_dim += args[a0].ndim - self.ndim
-            assert (
-                b_dim <= args[a0].ndim
-            ), f"Computed batch ndim {b_dim} is greater than input ndim {args[a0].ndim}."
+            assert b_dim <= args[a0].ndim, f"Computed batch ndim {b_dim} is greater than input ndim {args[a0].ndim}."
         elif b_dim <= 0:
             b_dim += args[a0].ndim
 
@@ -133,7 +136,10 @@ def flatten_batch(fn, bdim=0, to_flatten=1, is_method=None, keep_self_dim=True, 
 
         bshape = args[a0].shape[:b_dim]
 
-        args.update((n, flatten(args[n], b_dim)) for n in to_flatten)
+        try:
+            args.update((n, flatten(args[n], b_dim)) for n in to_flatten)
+        except NotImplementedError:
+            return fn(*bound_args.args, **bound_args.kwargs)
 
         result = fn(*bound_args.args, **bound_args.kwargs)
 
@@ -147,12 +153,15 @@ def flatten_batch(fn, bdim=0, to_flatten=1, is_method=None, keep_self_dim=True, 
 def get_args(other_fn=None, exclude={}):
     argnames = set(signature(other_fn).parameters) - set(exclude)
     from utils import dict_pop
+
     def get_args_decorator(fn):
         @wraps(fn)
         def wrapped_fn(*args, **kwargs):
             params = dict_pop(kwargs, *argnames)
             return fn(*args, params=params, **kwargs)
+
         return wrapped_fn
+
     return get_args_decorator
 
 
@@ -165,9 +174,7 @@ def do_normalize(X, bdim=-1, euclidean=False):
     return X / X_std
 
 
-def sig_append(
-    fn, name, kind=Parameter.KEYWORD_ONLY, default=Parameter.empty, annotation=Parameter.empty
-):
+def sig_append(fn, name, kind=Parameter.KEYWORD_ONLY, default=Parameter.empty, annotation=Parameter.empty):
     """
     Appends a new parameter to the signature of `fn`.
     """
@@ -255,9 +262,7 @@ def _get_arg_name(arg: Union[int, str], argnames: List[str], is_method: bool) ->
         return arg
 
 
-def _get_batch_dim(
-    args: dict, is_method: bool, batch_dim: Optional[int], keep_self_dim: bool
-) -> int:
+def _get_batch_dim(args: dict, is_method: bool, batch_dim: Optional[int], keep_self_dim: bool) -> int:
     """Helper function to get batch dimension for normalize_args."""
     if is_method and keep_self_dim:
         return -args["self"].ndim if batch_dim is None else batch_dim - args["self"].ndim
@@ -265,7 +270,7 @@ def _get_batch_dim(
         return -1 if batch_dim is None else batch_dim
 
 
-def get_Xy(fn): # NOSONAR
+def get_Xy(fn):  # NOSONAR
     """
     This decorator ensures that a method gets appropriate `X` and `y`
     values. A method decorated in this way can assume that its `X` (or `x`)
@@ -299,9 +304,7 @@ def get_Xy(fn): # NOSONAR
                 if hasattr(self, y_name):
                     args[y_name] = getattr(self, y_name, None)
             except (KeyError, ValueError) as exc:
-                raise ValueError(
-                    f"You didn't pass any data to `{fn.__name__}`, and we couldn't find it in `self`."
-                )
+                raise ValueError(f"You didn't pass any data to `{fn.__name__}`, and we couldn't find it in `self`.")
 
         if y_name not in args or args[y_name] is None:
             data = args[X_name]
@@ -350,9 +353,12 @@ class RecursionContext:
 
     def __init__(self, fn, error=None):
         self.fn = fn
-        self.error = RecursionError(f"{fn.__name__} doesn't allow recursion, but was called recursively.") \
-            if error is None else error
-        if not hasattr(fn, '_recursed'):
+        self.error = (
+            RecursionError(f"{fn.__name__} doesn't allow recursion, but was called recursively.")
+            if error is None
+            else error
+        )
+        if not hasattr(fn, "_recursed"):
             fn._recursed = False
 
     def __enter__(self):
@@ -406,9 +412,7 @@ def get_defaults_from_self(fn):
                 if default is not None:
                     args[k] = default
                 elif v is NEED:
-                    raise ValueError(
-                        f"{k} must either be passed into {fn.__qualname__} or into __init__"
-                    )
+                    raise ValueError(f"{k} must either be passed into {fn.__qualname__} or into __init__")
 
         return fn(*bound_args.args, **bound_args.kwargs)
 

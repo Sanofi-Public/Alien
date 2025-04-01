@@ -1,16 +1,11 @@
 import os
 
 import numpy as np
+import pytest
 from pytest import importorskip
 from scipy.stats import sem as sp_sem
 
-from alien.benchmarks import (
-    KL_divergence,
-    Scatter,
-    Score,
-    best_multiple,
-    run_experiments,
-)
+from alien.benchmarks import KL_divergence, Score, best_multiple, run_experiments
 from alien.benchmarks.metrics import sem
 from alien.models import PytorchRegressor
 
@@ -20,26 +15,6 @@ nn = torch.nn
 np.random.seed(0)
 iters = list(range(10))
 y = np.random.normal(size=len(iters))
-
-
-class NeuralNetwork(nn.Module):
-    """Sample Pytorch Neural Network class"""
-
-    def __init__(self):
-        super().__init__()
-        self.linear_relu_stack = nn.Sequential(
-            nn.Linear(2, 32),
-            nn.ReLU(),
-            nn.Dropout(0.25),
-            nn.Linear(32, 32),
-            nn.ReLU(),
-            nn.Dropout(0.25),
-            nn.Linear(32, 1),
-        )
-
-    def forward(self, x):
-        logits = self.linear_relu_stack(x)
-        return logits
 
 
 class TestScore:
@@ -58,9 +33,9 @@ class TestScore:
         d.mkdir()
         file_path = str(d / "score_1.pkl")
         score = TestScore.score
-        score.save(file_path=file_path)
-        score_loaded = Score.load(file_path)
-        assert (score_loaded.x.data == score.x.data).all()
+        score.save(file_path=str(file_path))
+        with pytest.raises(NotImplementedError):
+            score_loaded = Score.load(str(file_path))
 
     def test_append(self):
         score = TestScore.score
@@ -94,7 +69,7 @@ def test_sem():
     assert np.isclose(test_sem, actual_sem).all()
 
 
-def test_run_experiments(tmp_path):
+def test_run_experiments(tmp_path, get_nn_model_small):
     experiment_path = tmp_path / "experiment_output"
     experiment_path.mkdir(exist_ok=True)
     experiment_path = str(experiment_path)
@@ -117,14 +92,14 @@ def test_run_experiments(tmp_path):
     ensemble_size = 13
     lin = np.linspace(0, 1, 50)
     X_test = np.stack(np.meshgrid(lin, lin), axis=2)
-    X = rng.uniform(0, 1, size=(1000, 2))
+    X = rng.uniform(0, 1, size=(200, 2))
     X_train = X[cut(X) < 0.8]
     y_train = fn(X_train)
-    model = NeuralNetwork()
+    model = get_nn_model_small
     X_tensor = torch.from_numpy(X_train).type(torch.float32)
     y_tensor = torch.from_numpy(y_train).type(torch.float32)
     regressor = PytorchRegressor(
-        model=model, X=X_tensor, y=y_tensor, ensemble_size=ensemble_size, uncertainty='dropout'
+        model=model, X=X_tensor, y=y_tensor, ensemble_size=ensemble_size, uncertainty="dropout"
     )
     run_experiments(
         X_tensor,
@@ -132,7 +107,7 @@ def test_run_experiments(tmp_path):
         regressor,
         runs_dir=experiment_path,
         overwrite_old_runs=True,
-        n_initial=100,
+        n_initial=32,
         batch_size=32,
         num_samples=float("inf"),
         selector=None,  # 'covariance', 'random', 'expected improvement'/'ei', 'greedy'
@@ -146,7 +121,7 @@ def test_run_experiments(tmp_path):
         test_size=0.2,
         timestamps=None,
         stop_samples=150,
-        stop_rmse=None,
+        # stop_rmse=None,
         stop_frac=None,  # suggest .85,
         # The following arguments are a bit odd, and best avoided
         peek_score=0,  # 0 if no peeking

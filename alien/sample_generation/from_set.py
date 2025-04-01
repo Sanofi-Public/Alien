@@ -30,17 +30,17 @@ class SetSampleGenerator(SampleGenerator):
 
         self.Xy = Xy
         self.data = data
-        self.rng = np.random.default_rng(random_seed)
         self.cap_to_size = cap_to_size
 
         self.shuffle = shuffle
         self.indices = np.arange(len(data))
+        self.random_seed = random_seed
         self.reshuffle()
 
     def reshuffle(self):
         """Reshuffles current indices"""
         if self.shuffle:
-            self.rng.shuffle(self.indices)
+            np.random.default_rng(self.random_seed).shuffle(self.indices)
         self.pointer = 0
 
     @property
@@ -110,7 +110,6 @@ class WrappedGenerator(SampleGenerator):
         self.source = source
         self.generate_source_samples = self.source.generate_samples
         self.random_seed = random_seed
-        self.rng = np.random.default_rng(random_seed)
 
     def generate_samples(self, N):
         raise NotImplementedError

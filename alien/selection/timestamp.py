@@ -5,11 +5,8 @@ from .selector import SampleSelector
 
 
 class TimestampSelector(SampleSelector):
-    def __init__(
-        self, model=None, random_seed=None, timestamp_key="t", timestamps=None, **kwargs
-    ):
+    def __init__(self, model=None, random_seed=None, timestamp_key="t", timestamps=None, **kwargs):
         super().__init__(model=model, **kwargs)
-        self.rng = np.random.default_rng(random_seed)
         self.timestamp_key = timestamp_key
         self.timestamps = timestamps
 
@@ -35,6 +32,6 @@ class TimestampSelector(SampleSelector):
 
         # Add a small random perturbation to the unique indices, to
         # randomize the sort order within each equal-time bin
-        bin += self.rng.uniform(-0.1, 0.1, len(bin))
+        bin += np.random.default_rng(self.random_seed).uniform(-0.1, 0.1, len(bin))
 
         return np.argsort(bin)[:batch_size]

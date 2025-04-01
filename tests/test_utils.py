@@ -4,6 +4,7 @@ import pytest
 from alien.utils import (
     SelfDict,
     add_slice,
+    any_pop,
     axes_except,
     chunks,
     concatenate,
@@ -12,8 +13,6 @@ from alien.utils import (
     reshape,
     seed_all,
     zip_dict,
-    any_get,
-    any_pop,
 )
 
 
@@ -145,20 +144,18 @@ def test_concatenate():
         concatenate(arr_1, arr_2)
     assert (concatenate(arr_2, arr_2) == torch.cat((arr_2, arr_2), dim=0)).all()
 
+
 def test_any_pop():
-    d = {'x':0, 'y':1, 'z':2}
+    d = {"x": 0, "y": 1, "z": 2}
     s = set(d.keys())
-    keys = ['y','x']
+    keys = ["y", "x"]
     assert any_pop(d, keys) == 1
     assert any_pop(d, keys) == 0
     with pytest.raises(KeyError):
         assert any_pop(d, keys)
     assert any_pop(d, keys, None) is None
 
-    assert any_pop(s, keys) == 'y'
-    assert any_pop(s, keys) == 'x'
+    assert any_pop(s, keys) == "y"
+    assert any_pop(s, keys) == "x"
     with pytest.raises(KeyError):
-        assert any_pop('z', keys)
-
-
-
+        assert any_pop("z", keys)

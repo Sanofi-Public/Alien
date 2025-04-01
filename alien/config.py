@@ -1,4 +1,3 @@
-
 default_training_epochs = 200
 default_training_samples = 20000
 

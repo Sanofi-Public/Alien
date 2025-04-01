@@ -1,28 +1,29 @@
-from collections.abc import Mapping, MutableSet, MutableSequence, Collection
-from typing import List, Union
+import os
+import sys
+from collections.abc import Collection, Mapping, MutableSequence, MutableSet
+from pathlib import Path
 
 import numpy as np
-from numpy.typing import ArrayLike
+from numpy.lib.stride_tricks import as_strided
+
+from .tumpy import tumpy as tp
 
 
-# pylint: disable=import-error
+# pylint: disable=import-error,import-outside-toplevel
 def seed_all(seed):
     import random
 
     random.seed(seed)
     np.random.seed(seed)
-    try:
+
+    if "torch" in sys.modules:
         import torch
 
         torch.manual_seed(seed)
-    except ImportError:
-        pass
-    try:
+    if "tensorflow" in sys.modules:
         import tensorflow as tf
 
         tf.random.set_seed(seed)
-    except ImportError:
-        pass
 
 
 def as_list(x):
@@ -42,14 +43,14 @@ def match(target, pool, fn=lambda x, y: x == y):
     return None
 
 
-def isint(i):
+def isint(i) -> bool:
     """Check whether i can be cast to an integer
 
     Args:
         i (_type_): _description_
 
     Returns:
-        _type_: _description_
+        bool: _description_
     """
     try:
         return int(i) == i
@@ -57,57 +58,100 @@ def isint(i):
         return False
 
 
-def dict_get(d, *keys, _pop=False, **kwargs):
-    out = {}
-    d_get = d.pop if _pop else d.get
-    for k in keys:
-        if isinstance(k, list) or isinstance(k, tuple):
-            for kk in reversed(k):
-                if kk in d:
-                    out[k[0]] = d_get(kk)
-        elif k in d:
-            out[k] = d_get(k)
+def is_0d(i):
+    """
+    Checks whether i is 0-dimensional, i.e., if it's a number, returns True;
+    If it's a 0d array, returns True. If it's a higher-D array, returns False
+    """
+    if isinstance(i, (slice, list)):
+        return False
+    if isinstance(i, tuple):
+        return all(is_0d(j) for j in i)
+    try:
+        return i.ndim == 0
+    except AttributeError:
+        return True
+
+
+def dict_get(input_dict, *keys, _pop=False, **kwargs):
+    d_get = input_dict.pop if _pop else input_dict.get
+    out = _dict_get_out(input_dict, *keys, _pop=_pop)
     for k, v in kwargs.items():
-        if k in d:
-            out[k] = d_get(k) 
+        if k in input_dict:
+            out[k] = d_get(k)
         elif k not in out:
             out[k] = v
     return out
 
 
-def dict_pop(d, *keys, **kwargs):
-    return dict_get(d, *keys, _pop=True, **kwargs)
+def _dict_get_out(input_dict, *keys, _pop=False):
+    d_get = input_dict.pop if _pop else input_dict.get
+    out = {}
+    for k in keys:
+        if isinstance(k, list) or isinstance(k, tuple):
+            for inner_key in reversed(k):
+                if inner_key in input_dict:
+                    out[k[0]] = d_get(inner_key)
+        elif k in input_dict:
+            out[k] = d_get(k)
+    return out
 
 
-def std_keys(d, *groups, **defaults):
+def dict_pop(input_dict, *keys, **kwargs):
+    return dict_get(input_dict, *keys, _pop=True, **kwargs)
+
+
+def std_keys(input_dict, *groups, **defaults):
     """
     Standardizes keys in a dictionary.
-    Each positional arg, `g`, apart from the first one (`d`) should be an 
+    Each positional arg, `g`, apart from the first one (`d`) should be an
     iterable of keys. Then `d` is processed so that all keys in `g`
     are replaced with the first key in `g`. If more than one key in `g`
     is in `d`, then all keys in `g` except the first (in `d`) will be removed.
     """
-    out = d.copy()
+    out = input_dict.copy()
     for g in groups:
         for h in reversed(g):
-            if h in d:
+            if h in input_dict:
                 del out[h]
-                out[g[0]] = d[h]
+                out[g[0]] = input_dict[h]
     for k, v in defaults.items():
         if k not in out:
             out[k] = v
     return out
 
 
-def update_copy(d1, d2=None, **kwargs):
-    d = d1.copy()
-    if isinstance(d2, dict):
-        d.update(d2)
+class Peekable:
+    def __init__(self, iterable):
+        self.iterator = iter(iterable)
+        self._next = None
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self._next is None:
+            return next(self.iterator)
+        out = self._next
+        self._next = None
+        return out
+
+    def peek(self):
+        if self._next is None:
+            self._next = next(self.iterator)
+        return self._next
+
+
+def update_copy(d_1, d_2=None, **kwargs):
+    d = d_1.copy()
+    if isinstance(d_2, dict):
+        d.update(d_2)
     d.update(kwargs)
     return d
 
 
 ERROR = "f6b1c433450cb749f45844dd60ab3b27"
+
 
 def any_get(s, elements, default=ERROR):
     assert isinstance(elements, Collection) and not isinstance(elements, str)
@@ -122,11 +166,10 @@ def any_get(s, elements, default=ERROR):
         for e in elements:
             if e in s:
                 return e
-    
-    if default==ERROR:
-        raise KeyError(f'None of the given keys are in the {type(s)}.')
-    else:
-        return default
+
+    if default == ERROR:
+        raise KeyError(f"None of the given keys are in the {type(s)}.")
+    return default
 
 
 def any_pop(s, keys, default=ERROR):
@@ -134,22 +177,20 @@ def any_pop(s, keys, default=ERROR):
         if isinstance(s, Mapping):
             k = any_get(s.keys(), keys, default=ERROR)
             return s.pop(k)
-        else:
-            k = any_get(s, keys, default=ERROR)
-            s.remove(k)
-            return k
+        k = any_get(s, keys, default=ERROR)
+        s.remove(k)
+        return k
 
     except KeyError:
-        if default==ERROR:
-            raise KeyError(f'None of the given keys are in the {type(s)}.')
-        else:
-            return default
+        if default == ERROR:
+            raise KeyError(f"None of the given keys are in the {type(s)}.")
+        return default
 
 
 def alias(argname):
     """Aliases an argument"""
     # TODO: write argument aliasing tool
-    #raise NotImplementedError
+    raise NotImplementedError
 
 
 def multisearch(a, query, one_to_one=True):
@@ -167,15 +208,12 @@ def multisearch(a, query, one_to_one=True):
         length 2, with each pair of the form (query_index, array_index)
     """
     red_axes = tuple(range(-a.ndim + 1, 0))  # 'feature space' axes
-    hits = np.all(a == query[:, None, ...], axis=red_axes)
-    args = np.argwhere(hits)
+    hits = tp.all(a == query[:, None, ...], axis=red_axes)
+    args = tp.argwhere(hits)
     if one_to_one:
-        assert np.all(
-            args[:, 0] == np.arange(len(query))
-        ), "Search results are not one-to-one with search queries!"
+        assert tp.all(args[:, 0] == tp.arange(len(query))), "Search results are not one-to-one with search queries!"
         return args[:, 1]
-    else:
-        return args
+    return args
 
 
 def ufunc(f):
@@ -190,11 +228,100 @@ def ufunc(f):
     return wrapped_f
 
 
+None_slice = slice(None)
+
+
+def default_min(*args, default=None):
+    args = set(args)
+    args.discard(default)
+    if len(args) == 0:
+        return default
+    return min(args)
+
+
+def default_max(*args, default=None):
+    args = set(args)
+    args.discard(default)
+    if len(args) == 0:
+        return default
+    return max(args)
+
+
+def expand_ellipsis(index, ndim):
+    is_ell = tuple(... is x for x in index)
+    if any(is_ell):
+        if isinstance(ndim, tuple):
+            ndim = len(ndim)
+        i_e = is_ell.index(True)
+        index = index[:i_e] + (None_slice,) * (ndim + 1 - len(index)) + index[i_e + 1 :]
+    return index
+
+
+def new_shape(old_shape, indices):
+    """
+    If A.shape = old_shape, then new_shape returns A[indices].shape.
+    No big arrays like A or A[indices] are actually created.
+    """
+    from itertools import zip_longest
+
+    indices = expand_ellipsis(indices, old_shape)
+
+    shape = []
+    for d, i in zip_longest(old_shape, indices, fillvalue=None_slice):
+        if i == None_slice:
+            shape.append(d)
+
+        elif isinstance(i, slice):
+            start = i.start or 0
+            stop = min(1e15 if i.stop is None else i.stop, d)
+            step = i.step or 1
+            shape.append(int((stop - 1 - start) // step + 1))
+
+        elif tp.is_array(i) or isinstance(i, list):
+            shape.append(len(i))
+
+        else:
+            pass  # this dimension will disappear
+
+    return tuple(shape)
+
+
+def move_index(index, axis0, axis1):
+    if tp.isin(..., index):
+        i_e = tp.argwhere(index == ...)[0].item()
+        indices = indices[:i_e] + (None_slice,) * (self.ndim + 1 - len(indices)) + indices[i_e + 1 :]
+    if axis0 < 0:
+        axis0 += len(index)
+    if axis1 < 0:
+        axis1 += max(axis0 + 1, len(index))
+    if (m := max(axis0, axis1)) >= len(index):
+        index = index + (None_slice,) * (m + 1 - len(index))
+    i_0 = index[axis0]
+    index = index[:axis0] + index[axis0 + 1 :]
+    index = index[:axis1] + (i_0,) + index[axis1:]
+    return index
+
+
 def shift_seed(seed, shift):
     try:
+        if not seed:
+            return shift
         return seed + shift
     except TypeError:
         return seed
+
+
+def version_number(x):
+    x = getattr(x, "__version__", x)
+    if isinstance(x, str):
+        v = []
+        for n in x.split("."):
+            try:
+                v.append(int(n))
+            except Exception as _:
+                v.append(0.5)
+        return tuple(v)
+    return x
 
 
 def ranges(*args):
@@ -214,12 +341,20 @@ def ranges(*args):
 
 class chunks:
     """
-    Takes arguments (seq, [[start,] stop,] step).
+    Takes arguments `(seq, [[start,] stop,] step)`.
     Returns an iterator which iterates over chunks
-    of seq, of size step.
+    of `seq`, of size `step`.
+
+    If the first argument is an integer, it assumes
+    no sequence was provided, so that the effective
+    signature is `([[start,] stop], step])` and uses
+    `range(stop)` instead.
     """
 
     def __init__(self, seq, *args):
+        if isinstance(seq, int):
+            args = (seq,) + args
+            seq = list(range(args[-2]))
         if len(args) == 1:
             try:
                 args = (len(seq),) + args
@@ -251,7 +386,7 @@ def frac_enum(seq, start_zero=True):
     if start_zero==True, the fraction starts at 0 and ends just
     short of 1. Otherwise, starts just over 0 and ends at 1.
     """
-    fracs, step = np.linspace(0, 1, len(seq), endpoint=False, retstep=True)
+    fracs, step = tp.linspace(0, 1, len(seq), endpoint=False, retstep=True)
     if not start_zero:
         fracs += step
     return zip(fracs, seq)
@@ -289,6 +424,8 @@ def reshape(x, shape, index=None):
         return x.reshape(*shape)
     except AttributeError:
         pass
+    except TypeError:
+        return x.reshape(shape)
 
     if "tensorflow" in str(type(x)):
         import tensorflow as tf
@@ -304,15 +441,39 @@ def flatten(a, dims):
     return reshape(a, (-1,) + a.shape[dims:])
 
 
-def diagonal(x, dims=2, degree=1, bdim=0):
-    bshape = x.shape[:bdim]
-    mshape = x.shape[bdim : bdim + degree]
-    mlen = np.prod(mshape)
-    fshape = x.shape[bdim + dims * degree :]
-    x = reshape(x, bshape + dims * (mlen,) + fshape)
-    for _ in range(dims - 1):
-        x = np.diagonal(x, axis1=bdim, axis2=bdim + 1)
-    return x.reshape(bshape + mshape + fshape)
+def diagonal(M, axes=(-2, -1)):
+    """
+    Returns a writeable view into the diagonal of `M`.
+    The diagonal will be taken along axes `axes` (default
+    `(-2,-1)`), and appended to the end of the shape, while the other
+    axes are left unchanged.
+
+    Doesn't check if all the given axes are the same size. If not,
+    behaviour is unpredictable and probably bad!
+    """
+    # Pytorch gives a writeable view already
+    if 'torch' in str(type(M)):
+        import torch
+        return torch.diagonal(M, dim1=axes[0], dim2=axes[1])
+
+    M = np.asarray(M)
+    axes = tuple(i % M.ndim for i in axes)
+    strides = tuple(s for i, s in enumerate(M.strides) if i not in axes) + (sum(M.strides[i] for i in axes),)
+
+    shape = tuple(d for i, d in enumerate(M.strides) if i not in axes) + (M.shape[axes[0]],)
+
+    return as_strided(M, strides=strides, shape=shape)
+
+
+def view(x, shape):
+    """Return a view of `x` with a new shape. Will never
+    copy data, so writing to the view will write to `x`."""
+    if isinstance(shape, np.ndarray):
+        y = x[:]
+        y.shape = shape
+        return y
+    else:  # Assume torch tensor:
+        return x.view(*shape)
 
 
 def concatenate(*args):
@@ -320,7 +481,7 @@ def concatenate(*args):
     Concatenates a series of datasets, or one of the supported
     datatypes, along axis 0 (the samples axis)
     """
-    args = [a for a in args if a is not None and a != []]
+    args = [a for a in args if a is not None and len(a)]
     if len(args) == 0:
         return None
     from .data.dataset import TeachableDataset, TeachableWrapperDataset
@@ -330,6 +491,7 @@ def concatenate(*args):
     elif all(isinstance(a, np.ndarray) for a in args):
         return np.concatenate(args, axis=0)
     elif all("torch" in str(type(a)) for a in args):
+        # pylint: disable=import-outside-toplevel
         import torch
 
         return torch.cat(args, dim=0)
@@ -351,36 +513,74 @@ def join(*args, make_ds=False):
     dimensions >= 2.
     """
     # pylint: disable=import-outside-toplevel
-    from .data.dataset import TeachableDataset, TeachableWrapperDataset
+    from .data.dataset import TeachableDataset
+
+    args = _join_helper_args(args)
+
+    if any(type(a) == tuple for a in args):
+        data = _join_helper_tuple(args)
+    elif any(isinstance(a, np.ndarray) for a in args):
+        data = _join_helper_numpy(args)
+    elif any("torch" in str(type(a)) for a in args):
+        data = _join_helper_torch(args)
+    elif any("Tumpy" in str(type(a)) for a in args):
+        data = _join_helper_tumpy(args)
+    elif all(isinstance(a, dict) for a in args):
+        data = {}
+        for a in args:
+            data.update(a)
+    elif all(isinstance(a, list) for a in args):
+        return list(list(c) for c in zip(args))
+
+    return TeachableDataset.from_data(data)
+
+
+def _join_helper_args(args):
+    from .data.dataset import TeachableWrapperDataset
 
     if len(args) == 1 and is_iterable(args[0]):
         args = args[0]
 
     assert all(len(a) == len(args[0]) for a in args[1:])
-    args = [a.data if isinstance(a, TeachableWrapperDataset) and (make_ds := True) else a for a in args]
+    args = [a.data if isinstance(a, TeachableWrapperDataset) else a for a in args]
+    return args
 
 
-    if any(type(a) == tuple for a in args):
-        args_unpacked = []
-        for a in args:
-            if isinstance(a, tuple):
-                args_unpacked += [*a]
-            else:
-                args_unpacked += [a]
-        data = tuple(args_unpacked)
-    elif any(isinstance(a, np.ndarray) for a in args):
-        args = [(a[...,None] if a.ndim < 2 else a) for a in args]
+def _join_helper_tuple(args):
+    args_unpacked = []
+    for a in args:
+        if isinstance(a, tuple):
+            args_unpacked += [*a]
+        else:
+            args_unpacked += [a]
+    data = tuple(args_unpacked)
+    return data
+
+
+def _join_helper_numpy(args):
+    if any(a.dtype == object for a in args):
+        data = np.array(
+            [np.concatenate([arg[i] for arg in args], axis=-1) for i in range(len(args[0]))],
+            dtype=object,
+        )
+    else:
+        args = [(a[..., None] if a.ndim < 2 else a) for a in args]
         data = np.concatenate(args, axis=1)
-    elif all("torch" in str(type(a)) for a in args):
-        import torch
-        args = [(a[...,None] if a.ndim < 2 else a) for a in args]
-        data = torch.cat(args, dim=1)
-    elif all(isinstance(a, dict) for a in args):
-        data = {}
-        for a in args:
-            data.update(a)
+    return data
 
-    return TeachableDataset.from_data(data) if make_ds else data
+
+def _join_helper_torch(args):
+    import torch
+
+    args = [(a[..., None] if a.ndim < 2 else a) for a in args]
+    data = torch.cat(args, dim=1)
+    return data
+
+
+def _join_helper_tumpy(args):
+    args = [(a[..., None] if a.ndim < 2 else a) for a in args]
+    data = tp.concatenate(args, axis=1)
+    return data
 
 
 def is_iterable(x):
@@ -434,8 +634,89 @@ def sum_except(X, non_axes):
     return X.sum(axis=axes_except(X, non_axes))
 
 
+class Identity:
+    """
+    Instantiate this class with an argument:
+    >>> Identity(obj) = obj
+    You just get the argument back. Magic!
+    Other arguments do nothing.
+    """
+
+    def __new__(cls, obj, *args, **kwargs):
+        return obj
+
+
 def no_default():
     raise NotImplementedError("no_default is used as a unique reference, and should not be called")
+
+
+def softmax(x, axis=-1, min_axes=2):
+    """
+    Returns the softmax of `x` along `axis`.
+    Unsqueezes enough dimensions to make `x.ndim >= min_axes`.
+    If `x.shape[axis] == 1`, returns the sigmoid of `x`, rather than the softmax.
+    """
+    while axis >= x.ndim:
+        x = x[..., None]
+    if x.shape[axis] > 1:
+        ex = tp.exp(x)
+        return ex / tp.sum(ex, axis=axis, keepdims=True)
+    else:
+        return 1. / (1. + tp.exp(-x))
+
+
+def convert_output_type(x, type0, type1, n_classes=None, smoothing=0.0):
+    from .models import Output
+
+    if type0 == type1:
+        return x
+
+    elif type0 == Output.CLASS:
+        return _convert_output_class(x, type1, n_classes, smoothing)
+    elif type0 == Output.LOGIT:
+        return _convert_output_logit(x, type1, n_classes, smoothing)
+    elif type0 == Output.PROB:
+        return _convert_output_prob(x, type1, n_classes, smoothing)
+
+
+def _convert_output_class(x, output_type, n_classes=None, smoothing=0.0):
+    from .models import Output
+
+    n_classes = n_classes or x.max() + 1
+    onehot = x[..., None] == tp.arange(n_classes, device=tp.device(x))
+    if not smoothing:
+        if output_type == Output.PROB:
+            return onehot.astype(tp.float32)
+        else:  # type1 == Output.LOGIT:
+            xx = tp.full(x.shape + (n_classes,), -tp.inf, device=tp.device(x))
+            xx[onehot] = 0.0
+            return xx
+    else:
+        zero_prob = smoothing / (n_classes - 1)
+        prob = tp.full(x.shape + (n_classes,), zero_prob, device=tp.device(x))
+        prob[onehot] = 1 - smoothing
+        if output_type == Output.PROB:
+            return prob
+        else:
+            return tp.log(prob)
+
+
+def _convert_output_logit(x, output_type, n_classes=None, smoothing=0.0):
+    from .models import Output
+
+    if output_type == Output.CLASS:
+        return x.argmax(-1)
+    elif output_type == Output.PROB:
+        return softmax(x, -1)
+
+
+def _convert_output_prob(x, output_type, n_classes=None, smoothing=0.0):
+    from .models import Output
+
+    if output_type == Output.CLASS:
+        return x.argmax(-1)
+    elif output_type == Output.LOGIT:
+        return tp.log(x)
 
 
 class SelfDict(dict):
@@ -493,7 +774,6 @@ class SelfDict(dict):
 
 
 class CachedDict:
-
     def __init__(self, get, *init_keys, **d2):
         self.cache = {}
         self._get = get.__get__(self)
@@ -502,18 +782,16 @@ class CachedDict:
             d1, init_keys = init_keys[0], init_keys[1:]
         else:
             d1 = {}
-        
+
         self.cache.update(d1)
         self.cache.update(d2)
 
-        if len(init_keys) == 1 and (
-                isinstance(init_keys[0], MutableSet) or 
-                isinstance(init_keys[0], MutableSequence)):
+        if len(init_keys) == 1 and (isinstance(init_keys[0], MutableSet) or isinstance(init_keys[0], MutableSequence)):
             init_keys = init_keys[0]
 
         [self(k) for k in init_keys]
 
-        for m in ['keys', 'values', 'items', 'get', 'pop', '__iter__', '__contains__']:
+        for m in ["keys", "values", "items", "get", "pop", "__iter__", "__contains__"]:
             self.__dict__[m] = getattr(self.cache, m)
 
     def __call__(self, key):
@@ -529,3 +807,55 @@ class CachedDict:
 
 def dot_last(a, b):
     return (a * b).sum(axis=-1)
+
+
+def create_directory(input_path, exist_ok=False):
+    # Check if the input is a string
+    if not isinstance(input_path, str):
+        raise ValueError("Input path must be a string.")
+
+    # Remove leading and trailing whitespaces
+    input_path = input_path.strip()
+
+    # Check if the input is not empty
+    if not input_path:
+        raise ValueError("Input path cannot be empty.")
+
+    # Create a Path object
+    sanitized_path = Path(input_path).resolve()
+
+    # Check if the directory already exists
+    if sanitized_path.exists():
+        if sanitized_path.is_dir() and exist_ok:
+            return
+        raise FileExistsError(f"Directory '{sanitized_path}' already exists.")
+
+    # Create the directory
+    sanitized_path.mkdir(parents=True, exist_ok=exist_ok)
+
+
+def list_directory(input_path):
+    # Check if the input is a string
+    if not isinstance(input_path, str):
+        raise ValueError("Input path must be a string.")
+
+    # Remove leading and trailing whitespaces
+    input_path = input_path.strip()
+
+    # Check if the input is not empty
+    if not input_path:
+        raise ValueError("Input path cannot be empty.")
+
+    # Create a Path object from the input path
+    sanitized_path = Path(input_path).resolve()
+
+    # Check if the path exists
+    if not sanitized_path.exists():
+        raise FileNotFoundError(f"The path '{sanitized_path}' does not exist.")
+
+    # Check if the path is a directory
+    if not sanitized_path.is_dir():
+        raise NotADirectoryError(f"The path '{sanitized_path}' is not a directory.")
+
+    # Return a list of files in the directory
+    return [entry.name for entry in sanitized_path.iterdir()]

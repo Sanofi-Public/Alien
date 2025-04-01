@@ -1,9 +1,9 @@
 .. _active-learning:
 
-What is active learning?
+What is active learning (and Bayesian Optimization)?
 ========================
 
-Active learning is an approach to data acquisition which get us better 
+Active learning is an approach to data acquisition which gets us better 
 models with less labeled data. Active learning doesn't just select the 
 "most promising" candidates for the next batch of labeling. It also 
 prioritizes candidates which would be most informative, i.e., which 

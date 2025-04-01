@@ -9,8 +9,9 @@ class RandomSelector(SampleSelector):
 
     def __init__(self, model=None, random_seed=None, **kwargs):
         super().__init__(model=model, **kwargs)
-        self.rng = np.random.default_rng(random_seed)
 
     @get_defaults_from_self
     def _select(self, samples=None, batch_size=1, **kwargs):
-        return self.rng.choice(len(samples), batch_size, replace=False)
+        return self.rng.choice(
+            len(samples), batch_size, replace=False
+        )

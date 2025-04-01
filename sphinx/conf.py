@@ -7,6 +7,7 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 import os
 import sys
+from shutil import copyfile
 
 import tomli
 
@@ -26,6 +27,15 @@ confluence_server_user = os.environ.get("CONFLUENCE_USER")
 confluence_server_pass = os.environ.get("CONFLUENCE_USER_KEY")
 confluence_parent_page = "Unstructured data search"
 
+#print(os.getcwd())
+
+#def setup(app):
+#    try:
+#        if not any(['sanofi.css' in fn for fn in os.listdir('./build/html/_static')]):
+#            copyfile('sanofi.css', 'build/html/_static/sanofi.css')
+#    except:
+#        copyfile('sanofi.css', 'build/html/_static/sanofi.css')
+#    app.add_css_file('sanofi.css')
 
 def _get_project_meta():
     with open("../pyproject.toml", mode="rb") as pyproject:
@@ -33,7 +43,7 @@ def _get_project_meta():
 
 
 project = "ALIEN"
-copyright = "2023"
+copyright = "2024"
 author = "Michael Bailey"
 
 pkg_meta = _get_project_meta()
@@ -60,5 +70,6 @@ default_role = "obj"
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = "sphinx_rtd_theme"
+html_logo = "../media/curio_small.png"
 
 # html_static_path = ['_static']

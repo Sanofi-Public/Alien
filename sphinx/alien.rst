@@ -1,7 +1,7 @@
 alien package
 =============
 
-Subpackages
+Major components
 -----------
 
 .. toctree::
@@ -13,8 +13,11 @@ Subpackages
    alien.sample_generation
    alien.selection
 
-Submodules
+Other submodules
 ----------
+
+:doc:`alien.stats`
+------------------
 
 alien.classes module
 --------------------
@@ -28,14 +31,6 @@ alien.decorators module
 -----------------------
 
 .. automodule:: alien.decorators
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-alien.stats module
-------------------
-
-.. automodule:: alien.stats
    :members:
    :undoc-members:
    :show-inheritance:

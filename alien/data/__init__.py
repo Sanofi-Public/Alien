@@ -6,6 +6,7 @@ from .dataset import (
     Dataset,
     DictDataset,
     NumpyDataset,
+    ObjectDataset,
     TeachableDataset,
     TorchDataset,
     TupleDataset,

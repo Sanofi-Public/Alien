@@ -1,2 +1,2 @@
 """Module for Keras model wrappers."""
-from .keras import KerasRegressor
+from .keras import KerasClassifier, KerasModel, KerasRegressor

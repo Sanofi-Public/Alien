@@ -20,13 +20,14 @@ class UniformSampleGenerator(SampleGenerator):
         self.mins = np.array(low)
         self.spans = np.array(high) - self.mins
         self.shape = self.mins.shape
-        self.rng = np.random.default_rng(random_seed)
         self.dtype = dtype
+        self.random_seed = random_seed
 
     def generate_samples(self, N):
-        return (self.rng.random((N, *self.shape)) * self.spans + self.mins).astype(
-            self.dtype
-        )
+        return (
+            np.random.default_rng(self.random_seed).random((N, *self.shape)) * self.spans
+            + self.mins
+        ).astype(self.dtype)
 
 
 class RandomSampleGenerator(SampleGenerator):
@@ -61,20 +62,12 @@ class RandomSampleGenerator(SampleGenerator):
     """
 
     def __init__(
-        self,
-        distribution="normal",
-        *args,
-        shape=(),
-        dtype=float,
-        random_seed=None,
-        **kwargs
+        self, distribution="normal", *args, shape=(), dtype=float, random_seed=None, **kwargs
     ):
-        self.rng = np.random.default_rng(random_seed)
-        if not hasattr(self.rng, distribution):
-            raise ValueError(
-                "distribution must be a valid numpy.random.Generator distribution."
-            )
-        self.dist = getattr(self.rng, distribution)
+        rng = np.random.default_rng(random_seed)
+        if not hasattr(rng, distribution):
+            raise ValueError("distribution must be a valid numpy.random.Generator distribution.")
+        self.dist = getattr(rng, distribution)
         self.dtype = dtype
         self.shape = shape
 
@@ -128,6 +121,4 @@ class RandomSampleGenerator(SampleGenerator):
             # and it needs to be at the beginning. Hence,
             return np.moveaxis(samples, -1, 0).astype(self.dtype)
         else:
-            return self.dist(*self.args, size=(N, *self.shape), **self.kwargs).astype(
-                self.dtype
-            )
+            return self.dist(*self.args, size=(N, *self.shape), **self.kwargs).astype(self.dtype)

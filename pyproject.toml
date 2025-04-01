@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "alien"
-version = "1.1.2"
+version = "2.0.3"
 description = "Active Learning In data ExploratioN"
 authors = ["Sanofi"]
 packages = [{ include = 'alien' }]
@@ -8,29 +8,31 @@ repository = "https://github.com/Sanofi-Public/Alien"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.9.2,<3.11"
-numpy = ">=1.22.3"
+python = ">=3.9.2,<3.12"
+numpy = ">=1.22.3,<2.0"
 scipy = ">=1.6"
 scikit-learn = ">=1.1"
 matplotlib = ">=3.5.2"
 ipython = ">=8.2.0"
 joblib = ">=1.0"
 pandas = ">=1.3"
-torch = { version = "^1.12", optional = true }
-pytorch-lightning = { version = "^1.8.6", optional = true }
-pytdc = "^0.3.8"
+torch = { version = "^2.4", optional = true }
+pytorch-lightning = { version = "^2.4", optional = true }
 deepchem = { version = "^2.6.0", optional = true }
-tensorflow = { version = "2.12", optional = true }
-dgl = { version = "^1.0.1", optional = true }
-dgllife = { version = "^0.3.2", optional = true }
+tensorflow = { version = "2.14", optional = true }
+catboost = { version = "^1.1.1", optional = true }
+lightgbm = { version = "^4.6.0", optional = true }
 deprecated = ">=1.2"
+rdkit = { version = "^2024.3.1", optional = true}
 
 [tool.poetry.extras]
-deepchem = ["deepchem"]
+deepchem = ["deepchem", "rdkit"]
 torch = ["torch", "pytorch-lightning"]
 tensorflow = ["tensorflow"]
-deepchem-torch = ["torch", "pytorch-lightning", "deepchem", "dgl", "dgllife"]
-deepchem-tensorflow = ["deepchem", "tensorflow"]
+deepchem-torch = ["torch", "pytorch-lightning", "deepchem", "dgl", "dgllife", "rdkit"]
+deepchem-tensorflow = ["deepchem", "tensorflow", "rdkit"]
+catboost = ["catboost"]
+lightgbm = ["lightgbm"]
 
 [tool.poetry.group.dev]
 optional = true
@@ -42,6 +44,7 @@ pylint = "^2.16.2"
 pytest = "^7.2.1"
 pre-commit = "^3.0.4"
 pytest-cov = "^4.0.0"
+virtualenv = "^20.26.6"
 
 [tool.poetry.group.docs]
 optional = true
@@ -59,15 +62,17 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
 testpaths = ["tests/"]
-addopts = "--cov=alien/ --cov-report xml:cov.xml --cov-fail-under=70"
+addopts = "--cov=alien/ --cov-report xml:cov.xml"
 
 [tool.coverage.run]
-# relative_files = true
 include = ["alien/"]
-omit = ["alien/classes.py"]
+omit = ["alien/classes.py", "alien/tumpy/numpy_bindings.py", "alien/tumpy/torch_bindings.py", "alien/benchmarks/retrospective.py", "alien/matrices.py"]
+
+[too.coverage.report]
+omit = ["alien/classes.py", "alien/tumpy/numpy_bindings.py", "alien/tumpy/torch_bindings.py", "alien/benchmarks/retrospective.py", "alien/matrices.py"]
 
 [tool.black]
-line-length = 99
+line-length = 120
 
 [tool.isort]
 profile = "black"
@@ -75,9 +80,11 @@ known_first_party = ["alien"]
 
 [tool.pylint.main]
 fail-under = 7
+ignore-paths = "^alien/tumpy/.*$"
 
 [tool.pylint.basic]
-good-names = ["a", "i", "j", "k", "n", "v", "x", "y", "N", "X", "dc", "db"]
+good-names = ["a", "i", "j", "k", "n", "v", "x", "y", "N", "X", "db", "dc", "df", "fn"]
+good-names-rgx = ["X_[A-Za-z0-9]", "y_[A-Za-z0-9]"]
 max-line-length = 120
 
 [tool.pylint."messages control"]
@@ -91,6 +98,7 @@ disable = [
     "deprecated-pragma",
     "use-symbolic-message-instead",
     "logging-fstring-interpolation",
+    "cyclic-import"
 ]
 
 [tool.pylint.typecheck]

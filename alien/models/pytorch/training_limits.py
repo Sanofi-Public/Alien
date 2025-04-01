@@ -1,10 +1,11 @@
+"""Helper functions to specify training limits to pytorch models."""
+
 from dataclasses import dataclass
 from functools import wraps
-from inspect import signature
 from typing import Optional
 
-from ...utils import dict_pop
 from ...config import default_training_epochs, default_training_samples
+from ...utils import dict_pop
 
 limit_long_names = ["sample_limit", "batch_limit", "epoch_limit"]
 limit_short_names = ["samples", "batches", "epochs"]
@@ -59,7 +60,7 @@ class TrainingLimit:
     min_epochs: float = 0
 
     samples: Optional[int] = None
-    epochs: Optional[float]   = None
+    epochs: Optional[float] = None
     batches: Optional[int] = None
 
     max_samples: float = float("inf")
@@ -77,19 +78,21 @@ class TrainingLimit:
 
         if min_samples > max_samples:
             return 0.5 * (min_samples + max_samples)
-        elif samples is None:
-            if max_samples == float("inf"):
-                return min_samples if min_samples > 0 else \
-                    (default_training_epochs * length if length else \
-                    default_training_samples)
-            return 0.5 * (min_samples + max_samples)
+        if samples is None:
+            return self._sample_limit_none(max_samples, min_samples, length)
 
         if samples < min_samples:
             return min_samples
-        elif samples > max_samples:
+        if samples > max_samples:
             return max_samples
-        else:
-            return samples
+        return samples
+
+    def _sample_limit_none(self, max_samples, min_samples, length=None):
+        if max_samples == float("inf"):
+            if min_samples > 0:
+                return min_samples
+            return default_training_epochs * length if length else default_training_samples
+        return 0.5 * (min_samples + max_samples)
 
     def batch_limit(self, batch_size=None, length=None):
         if self.batches:
@@ -103,9 +106,11 @@ class TrainingLimit:
 
 class StdLimit(TrainingLimit):
     def __init__(self, **kwargs):
-        assert set(kwargs).issubset(
-            limit_long_names
-        ), f"For StdLimit, may only pass in\n{*limit_long_names, *limit_short_names} \nYou may want to try TrainingLimit."
+        assert set(kwargs).issubset(limit_long_names), (
+            "For StdLimit, may only pass in\n"
+            f"{*limit_long_names, *limit_short_names}\n"
+            "You may want to try TrainingLimit."
+        )
         kwargs = {limit_long_to_short[name]: v for name, v in kwargs.items()}
         super().__init__(**kwargs)
 

@@ -1,9 +1,10 @@
-from functools import partial, wraps
+from functools import wraps
 from inspect import currentframe
 
 try:
     from typing import final as weak_final
 except ImportError:
+
     def weak_final(fn):
         return fn
 
@@ -34,16 +35,14 @@ def override(fn):
     return fn
 
 
-def init_subclass(subclass, superclass, **kwargs): # NOSONAR
-
+def init_subclass(subclass, superclass, **kwargs):  # NOSONAR
     for f_super in superclass.__dict__.values():
-
-        if groups := getattr(f_super, '__abstract_group__', False):
+        if groups := getattr(f_super, "__abstract_group__", False):
             for group in groups:
-                if not hasattr(subclass, '__abstract_req__'):
+                if not hasattr(subclass, "__abstract_req__"):
                     subclass.__abstract_req__ = {group: abstract_req[group]}
                     old_init = subclass.__init__
-                    
+
                     @wraps(subclass.__init__)
                     def abstract_init(self, *args, **kwargs):
                         old_init(self, *args, **kwargs)
@@ -53,11 +52,13 @@ def init_subclass(subclass, superclass, **kwargs): # NOSONAR
                                 if getattr(self, meth_name) != getattr(superclass, meth_name).__get__(self):
                                     k -= 1
                             if k > 0:
-                                raise TypeError(f"Subclasses of {superclass_name} must implement at least {n} of "
-                                    + ", ".join(abstract_groups[group]))
+                                raise TypeError(
+                                    f"Subclasses of {superclass.__name__} must implement at least {n} of "
+                                    + ", ".join(abstract_groups[group])
+                                )
 
                     subclass.__init__ = abstract_init
-                
+
                 else:
                     subclass.__abstract_req__[group] = abstract_req[group]
 
@@ -66,7 +67,7 @@ def init_subclass(subclass, superclass, **kwargs): # NOSONAR
                 if cls == superclass:
                     raise TypeError(
                         f"Class `{subclass.__qualname__}` cannot override @final "
-                        f"method `{name}` (defined in class `{superclass_name}`). Use @override "
+                        f"method `{name}` (defined in class `{superclass.__name__}`). Use @override "
                         "decorator if you must."
                     )
                 elif getattr(getattr(cls, name, None), "__override__", False):
@@ -79,8 +80,9 @@ def abstract_group(id, n=1):
     of them must be overriden by a subclass. Each group is determined
     by its `id`, which must be a hashable key.
     """
+
     def abstract_decorator(fn):
-        if '__abstract_group__' not in fn.__dict__:
+        if "__abstract_group__" not in fn.__dict__:
             fn.__abstract_group__ = set()
         fn.__abstract_group__.add(id)
 
@@ -105,11 +107,9 @@ if "__alien_abstract_class__" not in locals():
     __alien_abstract_class__ = True
     old_init_name = "__init_subclass_old_abstract_group__"
 
-    old_init = locals().get("__init_subclass__", lambda *a, **k : None) 
+    old_init = locals().get("__init_subclass__", lambda *a, **k : None)
     locals()[old_init_name] = old_init
     def __init_subclass__(cls, old_init=old_init, **kwargs):
         old_init(cls, **kwargs)
         init_subclass(cls, superclass=__class__, **kwargs)
-"""     
-
-
+"""

@@ -21,10 +21,26 @@ CovarianceSelector
    :undoc-members:
    :show-inheritance:
 
+EntropySelector
+---------------------------------
+
+.. autoclass:: alien.selection.EntropySelector
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 BAITSelector
 ---------------------------
 
 .. autoclass:: alien.selection.BAITSelector
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+ThompsonSelector
+---------------------------
+
+.. autoclass:: alien.selection.ThompsonSelector
    :members:
    :undoc-members:
    :show-inheritance:
@@ -49,6 +65,22 @@ TimestampSelector
 --------------------------------
 
 .. autoclass:: alien.selection.TimestampSelector
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+ExpectedImprovementSelector
+--------------------------------------------
+
+.. autoclass:: alien.selection.ExpectedImprovementSelector
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+GreedySelector
+-----------------------------
+
+.. autoclass:: alien.selection.GreedySelector
    :members:
    :undoc-members:
    :show-inheritance:

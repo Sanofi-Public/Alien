@@ -34,22 +34,28 @@
 from numpy.typing import ArrayLike
 
 from ...decorators import flatten_batch
-from ..linear import LastLayerLinearizableRegressor
+from ..models import LastLayerEmbeddingMixin
 
 # pylint: disable=import-outside-toplevel
 
 
-class LastLayerPytorchLinearization(LastLayerLinearizableRegressor):
-    """ "Last layer linearization for Pytorch-based models."""
+def is_trainable(module):
+    """Return whether module has any trainable parameters."""
+    return any(p.requires_grad for p in module.parameters())
 
-    def __init__(self, model=None, X=None, y=None, *args, **kwargs):
+
+class LastLayerEmbeddingPytorchMixin(LastLayerEmbeddingMixin):
+    """Last layer embedding for Pytorch-based models. This is just a mixin class,
+    and will not run on its own."""
+
+    def __init__(self, model=None, *args, X=None, y=None, **kwargs):
         self.last_layer = None
-        self._features = {}
         self._last_layer_name = ""
+        self.has_linear_last_layer = None
         super().__init__(model=model, X=X, y=y, *args, **kwargs)
 
     @flatten_batch
-    def predict_with_embedding(self, X):
+    def predict_with_embedding(self, X, *args, **kwargs):
         """Forward pass which returns the output of the penultimate layer along
         with the output of the last layer. If the last layer is not known yet,
         it will be determined when this function is called for the first time.
@@ -62,13 +68,27 @@ class LastLayerPytorchLinearization(LastLayerLinearizableRegressor):
         else:
             # if last layer is already known
             out = self.predict(X)
-        features = self._features[self._last_layer_name]
-        return out, features
+        return out, self._features
+
+    def predict_logits(self, X):
+        """Forward pass which returns the logits (output of the last trainable layer)."""
+        if self.last_layer is None:
+            # if this is the first forward pass and last layer is unknown
+            _ = self.find_last_layer(X)
+        else:
+            # if last layer is already known
+            _ = self.predict(X)
+        return self._logits
 
     def last_layer_embedding(self, X):
         return self.predict_with_embedding(X)[1]
 
     def linearization(self):
+        """Return linearization of the last layer (W, b).
+        Raise TypeError if last layer is not linear.
+        """
+        if not self.has_linear_last_layer:
+            raise TypeError("Last layer on this model may not be linear.")
         return self.last_layer.weight, self.last_layer.bias
 
     def set_last_layer(self, last_layer_name: str) -> None:
@@ -83,18 +103,14 @@ class LastLayerPytorchLinearization(LastLayerLinearizableRegressor):
         # set last_layer attributes and check if it is linear
         self._last_layer_name = last_layer_name
         self.last_layer = dict(self.model.named_modules())[last_layer_name]
-        if not isinstance(self.last_layer, torch.nn.Linear):
-            raise ValueError("Use model with a linear last layer.")
+        self.has_linear_last_layer = isinstance(self.last_layer, torch.nn.Linear)
 
         # set forward hook to extract features in future forward passes
-        self.last_layer.register_forward_hook(self._get_hook(last_layer_name))
+        self.last_layer.register_forward_hook(self.hook)
 
-    def _get_hook(self, name: str):
-        def hook(_, input, __):
-            # only accepts one input (expects linear layer)
-            self._features[name] = input[0].detach()
-
-        return hook
+    def hook(self, module, _input, output):
+        self._features = _input[0].detach()
+        self._logits = output.detach()
 
     def find_last_layer(self, X: ArrayLike):
         """Automatically determines the last layer of the model with one
@@ -112,13 +128,13 @@ class LastLayerPytorchLinearization(LastLayerLinearizableRegressor):
         if self.last_layer is not None:
             raise ValueError("Last layer is already known.")
 
-        act_out = dict()
+        act_out = {}
 
         def get_act_hook(name):
-            def act_hook(_, input, __):
-                # only accepts one input (expects linear layer)
+            def act_hook(_, _input, __):
+                # only accepts one input
                 try:
-                    act_out[name] = input[0].detach()
+                    act_out[name] = _input[0].detach()
                 except (IndexError, AttributeError):
                     act_out[name] = None
                 # remove hook
@@ -127,7 +143,7 @@ class LastLayerPytorchLinearization(LastLayerLinearizableRegressor):
             return act_hook
 
         # set hooks for all modules
-        handles = dict()
+        handles = {}
         for name, module in self.model.named_modules():
             handles[name] = module.register_forward_hook(get_act_hook(name))
 
@@ -143,14 +159,12 @@ class LastLayerPytorchLinearization(LastLayerLinearizableRegressor):
         keys = list(act_out.keys())
         for key in reversed(keys):
             layer = dict(self.model.named_modules())[key]
-            if len(list(layer.children())) == 0:
+            if len(list(layer.children())) == 0 and is_trainable(layer):
                 self.set_last_layer(key)
 
                 # save features from first forward pass
-                self._features[key] = act_out[key]
+                self._features = act_out[key]
 
                 return out
 
         raise ValueError("Something went wrong (all modules have children).")
-
-

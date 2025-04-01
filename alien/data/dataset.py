@@ -1,6 +1,7 @@
 """
 Module with dataset (sub-)classes for storing data.
 """
+
 # TODO in this module:
 # - join function for DictDataset
 # - check join implementation for TupleDataset
@@ -12,17 +13,19 @@ Module with dataset (sub-)classes for storing data.
 import sys
 import warnings
 from abc import ABCMeta, abstractmethod
-from collections.abc import MutableSequence
+from collections.abc import Iterable, MutableSequence
+from copy import copy, deepcopy
 from typing import Any, Optional, Union
 
 import numpy as np
 from numpy.random import BitGenerator, Generator, SeedSequence
 from numpy.typing import ArrayLike
 
+from ..tumpy import tumpy as tp
+from ..utils import Identity, add_slice, is_0d, reshape, update_copy
+
 if "torch" in sys.modules:
     import torch
-
-from ..utils import add_slice, reshape, isint, update_copy
 
 
 class Dataset(metaclass=ABCMeta):
@@ -32,7 +35,12 @@ class Dataset(metaclass=ABCMeta):
 
     def __new__(cls, *args, **kwargs):
         if cls == Dataset:
-            return Dataset.from_data(*args, **kwargs)
+            if "data" in kwargs:
+                data = kwargs.pop("data")
+            else:
+                data = args[0]
+            new_cls = find_dataset_class(data, *args, **kwargs)
+            return new_cls.__new__(new_cls, data, *args, **kwargs)
         else:
             return super().__new__(cls)
 
@@ -58,6 +66,35 @@ class Dataset(metaclass=ABCMeta):
         an iterable of indices of all occurences.
         """
 
+    @property
+    @abstractmethod
+    def dtype(self):
+        """Get the `dtype` of the contained data."""
+
+    @abstractmethod
+    def astype(self, dtype, copy=False):
+        """
+        Change the `dtype` of the contained data. Uses `numpy.ndarray.astype(...)`
+        or `torch.Tensor.type(...)`. Note that the default is not to copy the data
+        (if possible), unlike Numpy but like Pytorch.
+
+        Args:
+            dtype: The `dtype` to change to.
+            copy: If `True`, always copies the data, and returns a new `Dataset`
+                containing this data. If `False`, always returns the same `Dataset`
+                object, whose data is converted to `dtype`
+        """
+
+    def type(self, dtype=None, copy=False):
+        """
+        Behaves exactly like `.astype(...)`, except that when `dtype` is not provided,
+        return the `dtype` of the contained data.
+        """
+        if dtype is not None:
+            return self.astype(dtype, copy=copy)
+        else:
+            return self.dtype
+
     def __iter__(self):
         "Default iterator implementation"
         return iter(self[i] for i in range(len(self)))
@@ -75,30 +112,6 @@ class Dataset(metaclass=ABCMeta):
         # Need to figure out a general way that doesn't break this.
         dataset = TeachableDataset.from_data(*args, **kwargs)
         return dataset
-
-    @property
-    def X(self):
-        """Return features."""
-        self.check_Xy()
-        if self.bdim == 1:
-            return Dataset.from_data(self[:, :-1], recursive=False)
-        else:
-            i = (slice(None),) * self.bdim + (slice(None, -1),)
-            return Dataset.from_data(self[i], recursive=False)
-
-    @property
-    def y(self):
-        """Return targets."""
-        self.check_Xy()
-        if self.bdim == 1:
-            return Dataset.from_data(self[:, -1], recursive=False)
-        else:
-            i = (slice(None),) * self.bdim + (-1,)
-            return Dataset.from_data(self[i], recursive=False)
-    
-    def check_Xy(self):
-        if not self.has_Xy:
-            warnings.warn("Dataset doesn't store separate `X` or `y` columns.")
 
     @property
     @abstractmethod
@@ -120,6 +133,65 @@ class Dataset(metaclass=ABCMeta):
 
     def reshape(self, *shape, index=None, bdim=None):
         raise NotImplementedError
+
+    def reshape_features(self, *shape, index=None):
+        return self.reshape(*shape, index=add_slice(index, self.bdim), bdim=self.bdim)
+
+    def reshape_batch(self, *shape, index=None):
+        if index is None:
+            index = slice(0, self.bdim)
+            bdim = len(shape)
+        elif isinstance(index, slice):
+            assert index.step is None or index.step == 1
+            index = slice(index.start, min(index.stop, self.bdim))
+            bdim = self.bdim + len(shape) - (index.stop - index.start)
+
+        return self.reshape(*shape, index=index, bdim=bdim)
+
+    def unsqueeze(self, index):
+        return self.reshape((1,), index=slice(index, index))
+
+    def flatten_batch(self):
+        return self.reshape_batch(self, np.prod(self.batch_shape))
+
+    def swapaxes(self, *args, **kwargs):
+        return TeachableDataset.from_data(self.data.swapaxes(*args, **kwargs))
+
+
+def find_dataset_class(data, *args, convert_sequences=True, **kwargs):
+    if data is None or isinstance(data, dict):
+        return DictDataset
+    if convert_sequences and isinstance(data, MutableSequence):
+        data = np.asarray(data)
+    return find_imported_dataset_class(data)
+
+
+def find_imported_dataset_class(data):
+    if isinstance(data, TeachableDataset):
+        return Identity
+    elif isinstance(data, np.ndarray):
+        if data.dtype == object:
+            return ObjectDataset
+        else:
+            return NumpyDataset
+    elif isinstance(data, tuple):
+        return TupleDataset
+    elif "torch" in str(type(data)):
+        return TorchDataset
+    elif "deepchem" in str(type(data)):
+        from .deepchem import DeepChemDataset
+
+        return DeepChemDataset
+    elif "pandas" in str(type(data)):
+        import pandas as pd
+
+        if isinstance(data, pd.DataFrame):
+            return DataFrameDataset
+        elif isinstance(data, pd.Series):
+            return PandasSeriesDataset
+    else:
+        warnings.warn("Passing an unknown data format into TeachableDataset.")
+        return TeachableWrapperDataset
 
 
 class TeachableDataset(Dataset):
@@ -181,31 +253,12 @@ class TeachableDataset(Dataset):
         """
         if shuffle:
             return ShuffledDataset(
-                TeachableDataset.from_data(
-                    data, recursive=False, convert_sequences=convert_sequences, **kwargs
-                ),
+                TeachableDataset.from_data(data, recursive=False, convert_sequences=convert_sequences, **kwargs),
                 shuffle=shuffle,
                 random_seed=random_seed,
             )
-        elif data is None or isinstance(data, dict):
-            return DictDataset(data, convert_sequences=convert_sequences, **kwargs)
-        elif convert_sequences and isinstance(data, MutableSequence):
-            return NumpyDataset(np.asarray(data), **kwargs)
-        elif isinstance(data, TeachableDataset) or isinstance(data, MutableSequence):
-            return TeachableWrapperDataset(data, **kwargs) if recursive else data
-        elif isinstance(data, np.ndarray):
-            return NumpyDataset(data, **kwargs)
-        elif isinstance(data, tuple):
-            return TupleDataset(data, convert_sequences=convert_sequences, **kwargs)
-        elif "torch" in str(type(data)):
-            return TorchDataset(data, **kwargs)
-        elif "DataFrame" in str(type(data)):
-            return DictDataset({k: data[k].values for k in data.columns})
-        elif "deepchem" in str(type(data)):
-            return TeachableDataset.from_deepchem(data)
         else:
-            warnings.warn("Passing an unknown data format into TeachableDataset.")
-            return TeachableWrapperDataset(data)
+            return find_dataset_class(data, **kwargs)(data, **kwargs)
 
     @staticmethod
     def from_deepchem(data):
@@ -218,9 +271,7 @@ class TeachableDataset(Dataset):
 
             return DeepChemDataset(data)
         except Exception as exc:
-            raise NotImplementedError(
-                "We thought this was a DeepChem dataset, but apparently not!"
-            ) from exc
+            raise NotImplementedError("We thought this was a DeepChem dataset, but apparently not!") from exc
 
     def get_shuffle(self, shuffle="random", random_seed=None):
         """Return a shuffled version of self
@@ -233,6 +284,9 @@ class TeachableDataset(Dataset):
             ShuffledDataset: A shuffled version of `self`
         """
         return ShuffledDataset(self, shuffle=shuffle, random_seed=random_seed)
+
+    def swapaxes(self, *args, **kwargs):
+        return TeachableDataset.from_data(self.data.swapaxes(*args, **kwargs))
 
 
 class TeachableWrapperDataset(TeachableDataset):
@@ -265,19 +319,9 @@ class TeachableWrapperDataset(TeachableDataset):
         # Raising NotImplementedError to avoid missing abstract method.
         raise NotImplementedError
 
-    def reshape_features(self, *shape, index=None):
-        return self.reshape(*shape, index=add_slice(index, self.bdim), bdim=self.bdim)
-
-    def reshape_batch(self, *shape, index=None):
-        if index is None:
-            index = slice(0, self.bdim)
-            bdim = len(shape)
-        elif isinstance(index, slice):
-            assert index.step is None or index.step == 1
-            index = slice(index.start, min(index.stop, self.bdim))
-            bdim = self.bdim + len(shape) - (index.stop - index.start)
-
-        return self.reshape(*shape, index=index, bdim=bdim)
+    @property
+    def dtype(self):
+        return self.data.dtype
 
     def __len__(self):
         return len(self.data)
@@ -315,6 +359,9 @@ class TeachableWrapperDataset(TeachableDataset):
     def shape(self):
         return self.data.shape
 
+    def astype(self, dtype):
+        raise NotImplementedError
+
 
 class ShuffledDataset(TeachableWrapperDataset):
     """
@@ -323,7 +370,8 @@ class ShuffledDataset(TeachableWrapperDataset):
     Added data goes at the end and isn't shuffled (until reshuffle() is called).
 
     :param data: the existing dataset to wrap
-    :param shuffle: determines the initial shuffle state: 'random' or 'identity'
+    :param shuffle: determines the initial shuffle state: 'random' or 'identity', or
+        an iterable of indices.
     :param random_seed: random seed to pass to the numpy shuffle algorithm.
                   If None, get a source of randomness from the OS.
     """
@@ -336,9 +384,9 @@ class ShuffledDataset(TeachableWrapperDataset):
         recursive=False,
         bdim=1,
     ):
+        self.rng = tp.random.default_rng(random_seed)
         assert bdim == 1, "ShuffledDataset is only possible with one batch dimension."
         super().__init__(data)
-        self.rng = np.random.default_rng(random_seed)
         if (not recursive) and isinstance(data, ShuffledDataset):
             self.data = data[data.shuffle]
         if isinstance(shuffle, np.ndarray):
@@ -350,13 +398,8 @@ class ShuffledDataset(TeachableWrapperDataset):
             self.shuffle = np.arange(len(self.data))
             self.reshuffle()
 
-    def reshuffle(
-        self,
-        # random_seed: Optional[
-        #     Union[int, ArrayLike, SeedSequence, BitGenerator, Generator]
-        # ] = None,
-    ):
-        """Reshuffles self with self.rng."""
+    def reshuffle(self):
+        """Reshuffles self with rng"""
         # TODO: random_seed is not used here. Should remove or refactor to use it
         self.rng.shuffle(self.shuffle)
 
@@ -393,20 +436,41 @@ class ShuffledDataset(TeachableWrapperDataset):
 
     def __iter__(self):
         self.extend_shuffle()
-        return iter(TeachableDataset.from_data(self.data[self.shuffle]))
+        return iter(self.data[self.shuffle])
+        # return iter(TeachableDataset.from_data(self.data[self.shuffle]))
+
+    def astype(self, dtype, copy=False):
+        if copy:
+            new = self.__class__(self.data, shuffle=self.shuffle, bdim=self.bdim)
+            new.rng = deepcopy(self.rng)
+            return new
+        else:
+            self.data = self.data.astype(dtype=dtype, copy=False)
+            return self
 
     def __array__(self, dtype=None):
         "Converts to a Numpy array"
-        return np.array(self.data, dtype=dtype)[self.shuffle]
+        return np.asarray(self.data, dtype=dtype)[self.shuffle]
 
     @property
     def X(self):
-        X = ShuffledDataset(self.data.X, shuffle=self.shuffle)
+        try:
+            X = self.data.X
+        except AttributeError:
+            warnings.warn(
+                f"Dataset of type {type(self.data)} does not have an X attribute. Returning whole dataset instead"
+            )
+            X = self.data
+        X = ShuffledDataset(X, shuffle=self.shuffle)
         X.rng = None
         return X
 
     @property
     def y(self):
+        try:
+            y = self.data.y
+        except AttributeError as err:
+            raise NotImplementedError(f"Dataset of type {type(self.data)} does not have a y attribute.") from err
         y = ShuffledDataset(self.data.y, shuffle=self.shuffle)
         y.rng = None
         return y
@@ -431,11 +495,11 @@ class ArrayDataset(TeachableWrapperDataset):
 
     def __getitem__(self, index):
         bdim = self.bdim
-        if isint(index):
-            bdim -= 1
-        elif isinstance(index, tuple):
+        if isinstance(index, tuple):
             for i in index[: self.bdim]:
-                bdim -= isint(i)
+                bdim -= is_0d(i)
+        elif is_0d(index):
+            bdim -= 1
         if bdim > 0:
             return self.__class__(self.data[index], bdim=bdim)
         return self.data[index]
@@ -443,15 +507,18 @@ class ArrayDataset(TeachableWrapperDataset):
     def __setitem__(self, index, value):
         self.data[index] = value
 
+    def __iter__(self):
+        return iter(self.data)
+
     def append(self, x):
-        self.extend(np.array(x)[None, ...])
+        self.extend(np.asarray(x)[None, ...])
 
     def find(self, value, first=True):
         matches = self.data == value
 
         # remove extra dimensions
         for _ in range(matches.ndim - self.bdim):
-            matches = np.all(np.array(matches), axis=-1)
+            matches = np.all(np.asarray(matches), axis=-1)
 
         index = np.argwhere(matches)[:, 0]
 
@@ -474,12 +541,38 @@ class ArrayDataset(TeachableWrapperDataset):
 
         return self.__class__(reshape(self.data, shape), bdim=bdim)
 
+    @classmethod
+    def __torch_function__(cls, func, types, args=(), kwargs=None):
+        import torch as tr
+        types = tuple(tr.Tensor if issubclass(t, ArrayDataset) else t for t in types)
+        args = tuple(tr.as_tensor(a.data) if isinstance(a, ArrayDataset) else a for a in args)
+        kwargs = (
+            None
+            if kwargs is None
+            else {k: tr.as_tensor(a.data) if isinstance(a, ArrayDataset) else a for k, a in kwargs.items()}
+        )
+        return tr.Tensor.__torch_function__(func, types, args, kwargs)
+
 
 class NumpyDataset(ArrayDataset):
     """Dataset with Numpy array as data."""
 
+    def __init__(self, data, **kwargs):
+        super().__init__(np.asarray(data), **kwargs)
+
     def extend(self, X):
         self.data = np.append(self.data, np.asarray(X), axis=0)
+
+    def astype(self, dtype, copy=False, convert_torch=True):
+        if convert_torch and not isinstance(dtype, np.dtype):
+            from ..tumpy.torch_bindings import dtype_t_to_n
+            dtype = dtype_t_to_n.get(dtype, dtype)
+        data = self.data.astype(dtype, copy=copy)
+        if copy:
+            return self.__class__(data, bdim=self.bdim)
+        else:
+            self.data = data
+            return self
 
     def __array__(self, dtype=None):
         return self.data if dtype is None else self.data.astype(dtype, copy=False)
@@ -495,9 +588,87 @@ class TorchDataset(ArrayDataset):
             X = X.data
         self.data = torch.cat((self.data, torch.tensor(X)), axis=0)
 
+    def astype(self, dtype, copy=False, convert_numpy=True):
+        if convert_numpy and isinstance(dtype, np.dtype):
+            from ..tumpy.torch_bindings import dtype_t_to_n
+
+            dtype = dtype_t_to_n.get(dtype, dtype)
+        data = self.data.type(dtype)
+        if copy:
+            data = data.clone() if data is self.data else data
+            return self.__class__(data, bdim=self.bdim)
+        else:
+            self.data = data
+            return self
+
     def __array__(self, dtype=None):
-        data = self.data.numpy(force=True)
+        data = self.data.numpy()
         return data if dtype is None else data.astype(dtype, copy=False)
+
+
+class ObjectDataset(NumpyDataset):
+    """Dataset with variable entries"""
+
+    def __init__(self, data, **kwargs):
+        """Init to cast data to np.ndarray with dtype=object"""
+        data = np.asarray(data, dtype=object)
+        super().__init__(data, has_Xy=False, **kwargs)
+
+    @property
+    def dtype(self):
+        """Property used to check if dataset is sequence dataset"""
+        return object
+
+    def _bad__getitem__(self, index):
+        if isinstance(index, tuple):
+            index, k = index[: self.bdim], index[self.bdim :]
+        else:
+            k = ()
+        data = self.data[index]
+        bdim = self.bdim + getattr(data, "ndim", 0) - self.data.ndim
+
+        if len(k):
+            data = np.array([r[k] for r in data])
+
+        if bdim:
+            return self.__class__(data, bdim=bdim)
+        else:
+            return data
+
+    def astype(self, dtype, **kwargs):
+        if dtype == object:
+            return self
+        raise TypeError(f"Can't convert `dtype` from `object` to {dtype}")
+
+    @property
+    def shape(self):
+        #try:
+        #    feat_shape = self.data[0].shape
+        #except AttributeError:
+        #    feat_shape = (None,)
+        return *self.data.shape, None
+
+    def reshape(self, *shape, index=None, **kwargs):
+        """Think I can make this work..."""
+        raise NotImplementedError("Reshape is not supported by ObjectDataset due to variable-length inputs.")
+
+    def reshape_batch(self, *shape, index=None, **kwargs):
+        if index is not None:
+            assert index.step is None or index.step == 1
+            shape = self.data.shape[: index.start] + shape + self.data.shape[index.stop :]
+
+        return self.__class__(self.data.reshape(shape), bdim=len(shape))
+
+    def swapaxes(self, a0, a1, **kwargs):
+        assert a0 != 0 and a1 != 0
+        a0 = a0 - 1 if a0 > 0 else a0
+        a1 = a1 - 1 if a1 > 0 else a1
+        return self.__class__([row.swapaxes(a0, a1) for row in self.data])
+
+
+class PandasSeriesDataset(NumpyDataset):
+    def __init__(self, data, **kwargs):
+        super().__init__(data.values, **kwargs)
 
 
 class DictDataset(TeachableWrapperDataset):
@@ -521,20 +692,11 @@ class DictDataset(TeachableWrapperDataset):
     them into a new `DictDataset` with the same keys.
     """
 
-    def __init__(self,
-        data={}, # NOSONAR
-        convert_sequences=True,
-        bdim=1,
-        has_Xy=None,
-        **kw_data
-    ):
-        data = update_copy(data, kw_data) # NOSONAR
-        super().__init__(None, bdim=bdim,
-            has_Xy=bool({'X','x','y'} & set(data)) if has_Xy is None else has_Xy)
+    def __init__(self, data={}, convert_sequences=True, bdim=1, has_Xy=None, **kw_data):  # NOSONAR
+        data = update_copy(data, kw_data)  # NOSONAR
+        super().__init__(None, bdim=bdim, has_Xy=bool({"X", "x", "y"} & set(data)) if has_Xy is None else has_Xy)
         self.data = {
-            k: TeachableDataset.from_data(
-                d, recursive=False, convert_sequences=convert_sequences, bdim=bdim
-            )
+            k: TeachableDataset.from_data(d, recursive=False, convert_sequences=convert_sequences, bdim=bdim)
             for k, d in data.items()
         }
 
@@ -558,12 +720,22 @@ class DictDataset(TeachableWrapperDataset):
             bdim = compute_bdim(self.shape, self.bdim, new_shape)
 
         if shape[bdim] != len(self.data):
-            raise ValueError("When reshaping a DictDataset, the first non-batch dimension must equal the number of keys.")
-        shape = shape[:bdim] + shape[bdim+1:]
+            raise ValueError(
+                "When reshaping a DictDataset, the first non-batch dimension must equal the number of keys."
+            )
+        shape = shape[:bdim] + shape[bdim + 1 :]
 
-        return self.__class__(
-            {k: reshape(v, shape, index) for k, v in self.data.items()}, bdim=bdim
-        )
+        return self.__class__({k: reshape(v, shape, index) for k, v in self.data.items()}, bdim=bdim)
+
+    def _get_bdim(self, i, k, sub_data, test_key):
+        try:
+            bdim = self.bdim + sub_data[test_key].ndim - self.data[test_key].ndim
+        except AttributeError:
+            bdim = self.bdim - len(i)
+            for j in i:
+                if isinstance(j, (MutableSequence, slice)) or hasattr(k, "__array__"):
+                    bdim += 1
+        return bdim
 
     def __getitem__(self, index):
         if isinstance(index, tuple) and len(index) > self.bdim:
@@ -575,17 +747,18 @@ class DictDataset(TeachableWrapperDataset):
 
             if k == slice(None, None):
                 k = self.data.keys()
-            elif not isinstance(k, MutableSequence):
+            elif not (isinstance(k, MutableSequence) or hasattr(k, "__array__")):
                 # single dict key, so return its value
                 return self.data[k][i]
 
         else:
-            i = index
+            i = (index,)
             k = self.data.keys()
 
         sub_data = {key: self.data[key][i] for key in k}
+        test_key = next(iter(k))
+        bdim = self._get_bdim(i, k, sub_data, test_key)
 
-        bdim = getattr(next(iter(sub_data.values())), "bdim", 0)
         if bdim == 0:  # batch is fully-indexed, so we return a dict
             return sub_data
         else:  # some batch indices remain, so return a DictDataset
@@ -595,7 +768,7 @@ class DictDataset(TeachableWrapperDataset):
         raise NotImplementedError
 
     def __iter__(self):
-        for i in np.ndindex(self.shape[:self.bdim]):
+        for i in np.ndindex(self.shape[: self.bdim]):
             yield {k: v[i] for k, v in self.data.items()}
 
     def __len__(self):
@@ -609,7 +782,10 @@ class DictDataset(TeachableWrapperDataset):
 
     def __getattr__(self, name):
         try:
-            return self.data[name]
+            if name in {"data", "bdim", "has_Xy"} or name[:2] == "__":
+                return object.__getattr__(self, name)
+            else:
+                return self.data[name]
         except (IndexError, TypeError, KeyError):
             raise AttributeError
 
@@ -627,13 +803,17 @@ class DictDataset(TeachableWrapperDataset):
 
     @property
     def X(self):
-        self.check_Xy()
-        return self.data["X"]
+        try:
+            return self.data["X"]
+        except KeyError:
+            raise AttributeError("No 'X' key in DictDataset.")
 
     @property
     def y(self):
-        self.check_Xy()
-        return self.data["y"]
+        try:
+            return self.data["y"]
+        except KeyError:
+            raise AttributeError("No 'y' key in DictDataset.")
 
     @property
     def shape(self):
@@ -644,6 +824,34 @@ class DictDataset(TeachableWrapperDataset):
     def ndim(self):
         return next(iter(self.data.values())).ndim + 1
 
+    @property
+    def dtype(self):
+        dts = [v.dtype for v in self.data.values()]
+        if not all([d == dts[0] for d in dts]):
+            raise TypeError(
+                "To call self.dtype, all subdtypes must be equal.\n"
+                "In this case, the subdtypes are:\n"
+                f"{[(k, v.dtype) for k, v in self.data.items()]}"
+            )
+        return dts[0]
+
+    def astype(self, dtype, copy=False):
+        data = self.data if not copy else data.copy()
+        for k in data:
+            data[k] = data[k].astype(dtype, copy=copy)
+        if copy:
+            return self.__class__(data, bdim=self.bdim)
+        else:
+            return self
+
+
+class DataFrameDataset(DictDataset):
+    def __init__(self, data, **kwargs):
+        import pandas as pd
+
+        assert isinstance(data, pd.DataFrame)
+        super().__init__({k: data[k].values for k in data.columns}, **kwargs)
+
 
 class TupleDataset(TeachableWrapperDataset):
     """Dataset with Tuple as self.data."""
@@ -651,10 +859,7 @@ class TupleDataset(TeachableWrapperDataset):
     def __init__(self, data, convert_sequences=True, bdim=1):
         super().__init__(None, bdim=bdim)
         self.data = tuple(
-            TeachableDataset.from_data(
-                d, recursive=False, convert_sequences=convert_sequences, bdim=bdim
-            )
-            for d in data
+            TeachableDataset.from_data(d, recursive=False, convert_sequences=convert_sequences, bdim=bdim) for d in data
         )
 
     def append(self, x):
@@ -676,8 +881,10 @@ class TupleDataset(TeachableWrapperDataset):
             bdim = compute_bdim(self_shape, self.bdim, new_shape)
 
         if shape[bdim] != len(self.data):
-            raise ValueError("When reshaping a TupleDataset, the first non-batch dimension must equal the number of keys.")
-        shape = shape[:bdim] + shape[bdim+1:]
+            raise ValueError(
+                "When reshaping a TupleDataset, the first non-batch dimension must equal the number of keys."
+            )
+        shape = shape[:bdim] + shape[bdim + 1 :]
 
         return self.__class__(tuple(reshape(v, shape, index) for v in self.data), bdim=bdim)
 
@@ -690,16 +897,15 @@ class TupleDataset(TeachableWrapperDataset):
             # k is the tuple key(s)
             k = index[self.bdim]
 
-            if isint(k):
+            if is_0d(k):
                 # returning a single dataset in the tuple
                 return self.data[k][i]
             elif isinstance(k, slice):
                 # select a slice of the tuple
                 sub_data = tuple(d[i] for d in self.data[k])
-            else:
-                # selecting multiple elements of the tuple
-                # TODO: d is undefined here
-                sub_data = tuple(d[key][i] for key in k)
+            # else:
+            #     # selecting multiple elements of the tuple
+            #     sub_data = tuple(d[key][i] for key in k) # TODO: d is undefined here
 
         else:
             sub_data = tuple(d[index] for d in self.data)
@@ -724,11 +930,13 @@ class TupleDataset(TeachableWrapperDataset):
             while arr.ndim < max_dim:
                 arr = np.expand_dims(arr, 1)
             arrays[i] = arr
+        # concatenate = False  # TODO: adhoc fix, `concatenate` variable was missing here
 
-        if concatenate:
-            return np.concatenate(arrays, axis=1)
-        else:
-            return np.stack(arrays, axis=1)
+        # if concatenate:
+        #     return np.concatenate(arrays, axis=1)
+        # else:
+        #     return np.stack(arrays, axis=1)
+        return np.stack(arrays, axis=1)
 
     def find(self, value, first=True):
         indices = tuple(d_n.find(v_n, first=False) for d_n, v_n in zip(self.data, value))
@@ -750,15 +958,32 @@ class TupleDataset(TeachableWrapperDataset):
     @property
     def shape(self):
         inner_shape = self.data[0].shape
-        return inner_shape[:self.bdim] + (len(self.data),) + (inner_shape[self.bdim:])
+        return inner_shape[: self.bdim] + (len(self.data),) + (inner_shape[self.bdim :])
 
     @property
     def X(self):
-        self.check_Xy()
+        raise AttributeError("New: TupleDatasets no longer have an `X` attribute.")
         X = self.data[:-1]
         return TupleDataset(X) if len(X) > 1 else X[0]
 
     @property
     def y(self):
-        self.check_Xy()
+        raise AttributeError("New: TupleDatasets no longer have a `y` attribute.")
         return self.data[-1]
+
+    @property
+    def dtype(self):
+        dts = tuple(v.dtype for v in self.data)
+        if not all([d == dts[0] for d in dts]):
+            raise TypeError(
+                f"To call self.dtype, all subdtypes must be equal.\n" f"In this case, the subdtypes are:\n{dts}"
+            )
+        return dts[0]
+
+    def astype(self, dtype, copy=False):
+        data = tuple(d.astype(dtype, copy=copy) for d in self.data)
+        if copy:
+            return self.__class__(data, bdim=self.bdim)
+        else:
+            self.data = data
+            return self

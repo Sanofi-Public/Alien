@@ -5,22 +5,26 @@ import numpy as np
 from ..decorators import get_defaults_from_self, get_Xy
 from ..utils import sum_except
 from .linear import LinearizableRegressor
-from .models import CovarianceRegressor, test_if_deepchem, test_if_pytorch, test_if_keras
+from .models import CovarianceRegressor
 
 # pylint: disable=import-outside-toplevel
+
+SUBCLASS_ERROR = "This method should be implemented by the subclass."
 
 
 class LaplaceApproxRegressor(CovarianceRegressor):
     """
     A model which can produce last-layer embeddings (DeepChem Pytorch/Keras, vanilla
     Pytorch, or any model given an :meth:`embedding` method) may be wrapped in the
-    :class:`LaplaceApproxRegressor` class, yielding an ALIEN model which computes 
-    covariances using the Laplace approximation on the last layer weights (see 
+    :class:`LaplaceApproxRegressor` class, yielding an ALIEN model which computes
+    covariances using the Laplace approximation on the last layer weights (see
     `Laplace Redux, Daxberger et al 2022 <https://arxiv.org/abs/2106.14806>`_)
     """
+
     def __init__(self, *args, lamb=1.0, **kwargs):
         super().__init__(*args, **kwargs)
         self.lamb = lamb
+        self.weight_covariance = None
 
     @abstractmethod
     def fit_laplace(self, X=None, y=None):
@@ -54,3 +58,14 @@ class LinearizableLaplaceRegressor(LaplaceApproxRegressor, LinearizableRegressor
     def covariance_laplace(self, X, **kwargs):
         return self.covariance_linear(X, **kwargs)
 
+    def _forward(self, X, *args, **kwargs):
+        raise NotImplementedError(SUBCLASS_ERROR)
+
+    def _prepare_batch(self, X):
+        raise NotImplementedError(SUBCLASS_ERROR)
+
+    def covariance(self, X, **kwargs):
+        return self.covariance_laplace(X, **kwargs)
+
+    def last_layer_embedding(self, X):
+        raise NotImplementedError(SUBCLASS_ERROR)
